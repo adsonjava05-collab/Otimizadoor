@@ -6,6 +6,7 @@ export interface TourStep {
   title: string;
   description: string;
   content?: ReactNode;
+  hideDescription?: boolean;
 }
 
 interface GuidedTourProps {
@@ -67,16 +68,24 @@ export function GuidedTour({ steps, onComplete, onSkip }: GuidedTourProps) {
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto px-5 py-4">
+        <div className={`flex-1 overflow-y-auto ${step.hideDescription ? 'px-3 py-3' : 'px-5 py-4'}`}>
           {step.content && (
-            <div className="mb-4 overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-900/50">
+            <div
+              className={`overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-900/50 ${
+                step.hideDescription ? 'mb-3' : 'mb-4'
+              }`}
+            >
               {step.content}
             </div>
           )}
-          <h3 className="text-lg font-bold text-slate-900 dark:text-white">{step.title}</h3>
-          <p className="mt-2 text-sm leading-relaxed text-slate-500 dark:text-slate-400">
-            {step.description}
-          </p>
+          <h3 className={`text-lg font-bold text-slate-900 dark:text-white ${step.hideDescription ? 'px-2' : ''}`}>
+            {step.title}
+          </h3>
+          {!step.hideDescription && (
+            <p className="mt-2 text-sm leading-relaxed text-slate-500 dark:text-slate-400">
+              {step.description}
+            </p>
+          )}
         </div>
 
         {/* Navigation */}

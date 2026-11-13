@@ -7,7 +7,6 @@ export const LOCAL_STORES = [
   'app_settings',
   'global_announcements',
   'announcement_confirmations',
-  'tutorial_completions',
 ] as const;
 
 export type LocalStoreName = (typeof LOCAL_STORES)[number];

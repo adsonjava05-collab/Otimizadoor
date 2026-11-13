@@ -47,8 +47,10 @@ const STEPS: TourStep[] = [
     title: 'Organizando e imprimindo sua rota no Circuit',
     description:
       'Otimize sua rota no Circuit. Depois, toque nos três pontinhos ao lado de "Toque para adicionar" e selecione "Imprimir rota".',
+    hideDescription: true,
     content: (
       <TutorialScreenshot
+        large
         src="/tutorial/inicio-dois.png"
         alt="Circuit: três pontinhos ao lado de Toque para adicionar e a opção Imprimir rota"
       />
@@ -58,8 +60,10 @@ const STEPS: TourStep[] = [
     title: 'Selecionando a impressora Rota 123',
     description:
       'Por padrão, aparece "Salvar como PDF". Toque nessa opção, selecione "Rota 123 — Importar PDF" e depois toque no botão de impressão para enviar sua rota.',
+    hideDescription: true,
     content: (
       <TutorialScreenshot
+        large
         src="/tutorial/impressora.png"
         alt="Tela de impressão com a opção Rota 123 — Importar PDF selecionada"
       />
@@ -69,8 +73,10 @@ const STEPS: TourStep[] = [
     title: 'Rota recebida! Agora é só bipar.',
     description:
       'Após enviar a rota pela impressora virtual, você receberá uma notificação do Rota 123. Toque nela para abrir automaticamente a tela de bipagem da sua rota.',
+    hideDescription: true,
     content: (
       <TutorialScreenshot
+        large
         src="/tutorial/rota-recebida.png"
         alt="Notificação do Rota 123 informando que a rota foi recebida"
       />

@@ -13,13 +13,14 @@ interface TutorialScreenshotProps {
   src: string;
   alt: string;
   crop?: ScreenshotCrop;
+  large?: boolean;
 }
 
-export function TutorialScreenshot({ src, alt, crop }: TutorialScreenshotProps) {
+export function TutorialScreenshot({ src, alt, crop, large }: TutorialScreenshotProps) {
   const [zoomed, setZoomed] = useState(false);
 
   return (
-    <div className="p-3">
+    <div className={large ? 'p-1' : 'p-3'}>
       <button
         type="button"
         onClick={() => setZoomed(true)}
@@ -30,8 +31,20 @@ export function TutorialScreenshot({ src, alt, crop }: TutorialScreenshotProps) 
         <img
           src={src}
           alt={alt}
-          className={crop ? 'block w-full max-w-none' : 'block max-h-[70vh] w-auto max-w-full object-contain'}
-          style={crop ? { marginTop: `${(-crop.top / crop.sourceWidth) * 100}%` } : undefined}
+          className={
+            crop
+              ? 'block w-full max-w-none'
+              : large
+                ? 'block h-auto w-full object-contain'
+                : 'block max-h-[70vh] w-auto max-w-full object-contain'
+          }
+          style={
+            crop
+              ? { marginTop: `${(-crop.top / crop.sourceWidth) * 100}%` }
+              : large
+                ? { maxHeight: 'min(450px, calc(90vh - 200px))' }
+                : undefined
+          }
         />
         <span className="absolute top-2 right-2 flex items-center gap-1 rounded-full bg-black/60 px-2 py-1 text-[10px] font-medium text-white">
           <Maximize2 className="h-3 w-3" />
@@ -55,7 +68,12 @@ export function TutorialScreenshot({ src, alt, crop }: TutorialScreenshotProps) 
             >
               <X className="h-5 w-5" />
             </button>
-            <img src={src} alt={alt} className="h-auto max-h-[320px] w-auto max-w-full object-contain" />
+            <img
+              src={src}
+              alt={alt}
+              className="h-auto w-auto max-w-full object-contain"
+              style={{ maxHeight: large ? 'min(450px, calc(90vh - 32px))' : '320px' }}
+            />
           </div>,
           document.body,
         )}
