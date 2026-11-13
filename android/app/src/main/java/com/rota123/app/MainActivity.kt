@@ -1871,8 +1871,6 @@ class MainActivity : AppCompatActivity() {
                             "Erro ao abrir permissão de sobreposição",
                             e
                         )
-
-                        reportOverlayState(false)
                     }
 
                     reportOverlayState(false)
