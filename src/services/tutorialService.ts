@@ -1,6 +1,6 @@
 import { getAllRecords, getRecord, putRecord } from './localDb';
 
-export type TutorialType = 'flex' | 'interface' | 'frota';
+export type TutorialType = 'flex';
 
 interface TutorialCompletionRecord {
   id: TutorialType;
