@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Loader2, Users, FileSpreadsheet } from 'lucide-react';
+import { ChevronRight, Loader2, Users, FileSpreadsheet } from 'lucide-react';
 import { addFrotaImportEntry } from '../services/historyService';
 import { optimizeFrotaFile } from '../services/frotaOptimizerService';
 import { saveBlobToDevice, openTempTsv } from '../services/nativeDownload';
@@ -8,16 +8,16 @@ import type { RawRow } from '../types';
 
 interface FrotaCardProps {
   onError?: (message: string) => void;
-  onFirstInteract?: () => void;
+  onOpen?: () => void;
 }
 
-export function FrotaCard({ onError, onFirstInteract }: FrotaCardProps) {
+export function FrotaCard({ onError, onOpen }: FrotaCardProps) {
   const frotaInputRef = useRef<HTMLInputElement>(null);
   const [frotaLoading, setFrotaLoading] = useState(false);
   const [frotaResult, setFrotaResult] = useState<{ blob: Blob; fileName: string } | null>(null);
   const [frotaStats, setFrotaStats] = useState<{ totalRows: number; outputRows: number; duplicatesRemoved: number } | null>(null);
   const [hasDownloaded, setHasDownloaded] = useState(false);
-  const interactedRef = useRef(false);
+  const [expanded, setExpanded] = useState(false);
 
   const downloadFrotaFile = async (): Promise<boolean> => {
     if (!frotaResult) return false;
@@ -117,7 +117,18 @@ export function FrotaCard({ onError, onFirstInteract }: FrotaCardProps) {
         </div>
       )}
 
-      {frotaResult && !frotaLoading ? (
+      {!expanded ? (
+        <button
+          onClick={() => {
+            setExpanded(true);
+            onOpen?.();
+          }}
+          className="flex w-full items-center justify-center gap-1 rounded-xl bg-orange-500 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-orange-700 active:scale-[0.98]"
+        >
+          Abrir
+          <ChevronRight className="h-4 w-4" />
+        </button>
+      ) : frotaResult && !frotaLoading ? (
         <div className="space-y-4">
           <CircuitHandoffPanel
             fileName={frotaResult.fileName}
@@ -134,13 +145,7 @@ export function FrotaCard({ onError, onFirstInteract }: FrotaCardProps) {
         </div>
       ) : (
         <button
-          onClick={() => {
-            if (!interactedRef.current) {
-              interactedRef.current = true;
-              onFirstInteract?.();
-            }
-            frotaInputRef.current?.click();
-          }}
+          onClick={() => frotaInputRef.current?.click()}
           disabled={frotaLoading}
           className="flex w-full items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-orange-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 whitespace-nowrap"
         >

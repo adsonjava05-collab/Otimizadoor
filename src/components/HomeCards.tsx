@@ -39,7 +39,7 @@ export function HomeCards({ flowState, onOpenPrepareRoute, onOpenFrota, onError 
         </span>
       </button>
 
-      <FrotaCard onError={onError} onFirstInteract={onOpenFrota} />
+      <FrotaCard onError={onError} onOpen={onOpenFrota} />
     </div>
   );
 }
