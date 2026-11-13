@@ -6,6 +6,9 @@ type AndroidBridge = {
   notifyRouteReady?: (fileName: string) => boolean;
   openSavedFile?: (fileName: string) => boolean;
   openTempTsv?: (base64: string, fileName: string) => boolean;
+  isFloatingNumberActive?: () => boolean;
+  requestStartFloatingNumber?: () => boolean;
+  requestStopFloatingNumber?: () => boolean;
 };
 
 type SaveResolver = (saved: boolean, actualFileName: string | null) => void;

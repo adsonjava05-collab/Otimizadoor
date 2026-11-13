@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Moon, Sun, ArrowUp, Menu, X, History, Users, PlayCircle, Home, Download } from 'lucide-react';
+import { Moon, Sun, ArrowUp, Menu, X, History, Users, PlayCircle, Home, Download, Hash } from 'lucide-react';
 import type { RawRow, DeliveryGroup, CheckState } from './types';
 import {
   groupDeliveriesWithOptions,
@@ -74,6 +74,7 @@ import { addFrotaImportEntry } from './services/historyService';
 import { deleteSharedFile, getLatestSharedFile, clearAllSharedFiles } from './services/sharedFileService';
 import { getFlowState, saveFlowState, clearFlowState, WAITING_PDF_STEPS, type FlowState } from './services/addressFlowService';
 import { saveBlobToDevice } from './services/nativeDownload';
+import { isFloatingNumberSupported, getFloatingNumberActive, requestStartFloatingNumber, requestStopFloatingNumber, onFloatingNumberStateChange } from './services/floatingNumberService';
 import { clearStoredRoute, loadStoredRoute, saveStoredRoute } from './services/routeFileStore';
 import { FrotaGuidedTour } from './components/FrotaGuidedTour';
 
@@ -128,6 +129,7 @@ function App() {
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [showFlexTour, setShowFlexTour] = useState(false);
   const [showFrotaTour, setShowFrotaTour] = useState(false);
+  const [floatingNumberOn, setFloatingNumberOn] = useState(() => isFloatingNumberSupported() && getFloatingNumberActive());
   const [xlsxSharedFile, setXlsxSharedFile] = useState<SharedFileData | null>(null);
   const [externalProcessing, setExternalProcessing] = useState(false);
   const [flowState, setFlowState] = useState<FlowState>(() => getFlowState());
@@ -240,6 +242,22 @@ function App() {
   currentHistoryIdRef.current = currentHistoryId;
   activeFileNameRef.current = activeFileName;
   firstScanTimeRef.current = firstScanTime;
+
+  useEffect(() => {
+    if (!isFloatingNumberSupported()) return;
+    return onFloatingNumberStateChange((active) => setFloatingNumberOn(active));
+  }, []);
+
+  const handleToggleFloatingNumber = () => {
+    if (!isFloatingNumberSupported()) return;
+    if (floatingNumberOn) {
+      requestStopFloatingNumber();
+      return;
+    }
+    const started = requestStartFloatingNumber();
+    if (!started) return;
+    setFloatingNumberOn(true);
+  };
 
   const addToast = useCallback((type: ToastType, message: string) => {
     const id = `${Date.now()}-${Math.random()}`;
@@ -787,6 +805,31 @@ function App() {
                         <Users className="h-5 w-5 text-purple-500" />
                         Administração
                       </button>
+                      <div className="flex w-full items-center justify-between px-4 py-3.5">
+                        <span className="flex items-center gap-3 text-sm font-medium text-slate-700 dark:text-slate-200">
+                          <Hash className="h-5 w-5 text-emerald-500" />
+                          Gerar Número
+                        </span>
+                        <button
+                          role="switch"
+                          aria-checked={floatingNumberOn}
+                          aria-label="Gerar Número"
+                          disabled={!isFloatingNumberSupported()}
+                          title={isFloatingNumberSupported() ? undefined : 'Disponível somente no APK Android.'}
+                          onClick={handleToggleFloatingNumber}
+                          className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
+                            floatingNumberOn
+                              ? 'bg-emerald-500'
+                              : 'bg-slate-300 dark:bg-slate-600'
+                          } ${isFloatingNumberSupported() ? '' : 'cursor-not-allowed opacity-50'}`}
+                        >
+                          <span
+                            className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
+                              floatingNumberOn ? 'translate-x-[22px]' : 'translate-x-0.5'
+                            }`}
+                          />
+                        </button>
+                      </div>
                       <div className="my-2 border-t border-slate-200 dark:border-slate-700" />
                       <button
                         onClick={() => {

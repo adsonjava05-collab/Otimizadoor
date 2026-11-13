@@ -117,6 +117,29 @@ class MainActivity : AppCompatActivity() {
         }
 
     // =========================================================
+    // PERMISSÃO DE SOBREPOSIÇÃO (BOTÃO FLUTUANTE)
+    // =========================================================
+
+    private val overlayPermissionLauncher =
+        registerForActivityResult(
+            ActivityResultContracts.StartActivityForResult()
+        ) { result ->
+
+            val granted = hasOverlayPermission()
+
+            reportOverlayState(granted)
+
+            if (granted) {
+                startFloatingNumberService()
+            }
+
+            Log.d(
+                TAG,
+                "Permissão de sobreposição: $granted"
+            )
+        }
+
+    // =========================================================
     // PERMISSÃO DA CÂMERA
     // =========================================================
 
@@ -501,6 +524,71 @@ class MainActivity : AppCompatActivity() {
         webView.loadUrl(PWA_URL)
 
         handleRouteIntent(intent)
+
+        // Informa ao frontend o estado real do botão flutuante.
+        webView.post {
+            deliverOverlayState()
+        }
+    }
+
+    // =========================================================
+    // BOTÃO FLUTUANTE - GERADOR DE NÚMEROS
+    // =========================================================
+
+    private fun hasOverlayPermission(): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            android.provider.Settings.canDrawOverlays(this)
+        } else {
+            true
+        }
+    }
+
+    private fun isFloatingNumberServiceRunning(): Boolean {
+        return FloatingNumberService.isRunning
+    }
+
+    private fun startFloatingNumberService() {
+        webView.post {
+            try {
+                startService(
+                    Intent(this, FloatingNumberService::class.java)
+                )
+            } catch (e: Exception) {
+                Log.e(TAG, "Erro ao iniciar botão flutuante", e)
+            }
+            deliverOverlayState()
+        }
+    }
+
+    private fun stopFloatingNumberService() {
+        webView.post {
+            try {
+                stopService(
+                    Intent(this, FloatingNumberService::class.java)
+                )
+            } catch (e: Exception) {
+                Log.e(TAG, "Erro ao parar botão flutuante", e)
+            }
+            deliverOverlayState()
+        }
+    }
+
+    private fun deliverOverlayState() {
+        val running = isFloatingNumberServiceRunning()
+
+        reportOverlayState(running)
+    }
+
+    private fun reportOverlayState(running: Boolean) {
+        val js = """
+            if (window.__rota123OverlayState) {
+                window.__rota123OverlayState($running);
+            }
+        """".trimIndent()
+
+        webView.post {
+            webView.evaluateJavascript(js, null)
+        }
     }
 
     // =========================================================
@@ -1753,6 +1841,55 @@ class MainActivity : AppCompatActivity() {
 
                 deliverNextPdf()
             }
+        }
+
+        // =====================================================
+        // GERADOR DE NÚMEROS - BOTÃO FLUTUANTE
+        // =====================================================
+
+        @JavascriptInterface
+        fun isFloatingNumberActive(): Boolean {
+            return isFloatingNumberServiceRunning() && hasOverlayPermission()
+        }
+
+        @JavascriptInterface
+        fun requestStartFloatingNumber(): Boolean {
+            if (!hasOverlayPermission()) {
+                webView.post {
+                    try {
+                        val intent = Intent(
+                            android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                            Uri.parse("package:$packageName")
+                        )
+
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+
+                        overlayPermissionLauncher.launch(intent)
+                    } catch (e: Exception) {
+                        Log.e(
+                            TAG,
+                            "Erro ao abrir permissão de sobreposição",
+                            e
+                        )
+
+                        reportOverlayState(false)
+                    }
+
+                    reportOverlayState(false)
+                }
+                return false
+            }
+
+            startFloatingNumberService()
+
+            return true
+        }
+
+        @JavascriptInterface
+        fun requestStopFloatingNumber(): Boolean {
+            stopFloatingNumberService()
+
+            return true
         }
 
         // =====================================================
