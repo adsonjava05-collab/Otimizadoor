@@ -1,5 +1,4 @@
-import { supabase } from '../lib/supabase';
-import { getInstallationId } from './installationService';
+import { clearStore, deleteRecord, getAllRecords, getRecord, putRecord } from './localDb';
 import type { RawRow, DeliveryGroup, CheckState } from '../types';
 
 export interface HistoryEntry {
@@ -29,66 +28,87 @@ export interface FrotaHistoryEntry {
   importTime: string;
 }
 
-function mapHistoryEntry(d: Record<string, unknown>): HistoryEntry {
-  const importTime = d.import_time as string;
-  const date = importTime ? new Date(importTime).toLocaleDateString('pt-BR') : '';
+interface ImportRecord {
+  id: string;
+  fileName: string;
+  importType: string;
+  importTime: string;
+  exportTime: string | null;
+  totalOrders: number;
+  totalGroups: number;
+  checkedGroups: number;
+  rows: RawRow[];
+  groups: DeliveryGroup[];
+  headers: string[];
+  checkState: CheckState;
+  createdAt: string;
+}
+
+const EMPTY_CHECK_STATE: CheckState = { checked: {}, spxToGroup: {} };
+
+function countChecked(checkState: CheckState): number {
+  return Object.values(checkState.checked).filter(Boolean).length;
+}
+
+function newRecordId(): string {
+  return crypto.randomUUID();
+}
+
+function toHistoryEntry(record: ImportRecord): HistoryEntry {
+  const importTime = record.importTime;
   return {
-    id: d.id as string,
-    fileName: d.file_name as string,
-    date,
-    totalOrders: d.total_orders as number,
-    totalGroups: d.total_groups as number,
-    checkedOrders: d.checked_groups as number,
+    id: record.id,
+    fileName: record.fileName,
+    date: importTime ? new Date(importTime).toLocaleDateString('pt-BR') : '',
+    totalOrders: record.totalOrders,
+    totalGroups: record.totalGroups,
+    checkedOrders: record.checkedGroups,
     importTime: importTime ? new Date(importTime).toLocaleString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '',
-    exportTime: d.export_time as string | null,
-    rows: d.rows_data as RawRow[],
-    groups: d.groups_data as DeliveryGroup[],
-    headers: d.headers_data as string[],
-    checkState: d.check_state_data as CheckState,
-    importType: d.import_type as string | undefined,
+    exportTime: record.exportTime,
+    rows: record.rows,
+    groups: record.groups,
+    headers: record.headers,
+    checkState: record.checkState,
+    importType: record.importType,
   };
 }
 
-export async function getHistory(): Promise<HistoryEntry[]> {
-  const installationId = getInstallationId();
-  const { data, error } = await supabase
-    .from('import_history')
-    .select('*')
-    .eq('user_id', installationId)
-    .order('created_at', { ascending: false });
+function toFrotaEntry(record: ImportRecord): FrotaHistoryEntry {
+  return {
+    id: record.id,
+    fileName: record.fileName,
+    totalRows: record.totalOrders,
+    outputRows: record.totalGroups,
+    duplicatesRemoved: record.checkedGroups,
+    headers: record.headers,
+    rows: record.rows,
+    importTime: record.importTime,
+  };
+}
 
-  if (error) {
-    console.error('Error fetching import history:', error);
+async function getSortedImports(importType?: string): Promise<ImportRecord[]> {
+  const records = await getAllRecords<ImportRecord>('import_history');
+  return records
+    .filter((r) => importType === undefined || r.importType === importType)
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+
+export async function getHistory(): Promise<HistoryEntry[]> {
+  try {
+    return (await getSortedImports()).map(toHistoryEntry);
+  } catch (err) {
+    console.error('Error fetching import history:', err);
     return [];
   }
-
-  return (data || []).map(mapHistoryEntry);
 }
 
 export async function getFrotaImportHistory(): Promise<FrotaHistoryEntry[]> {
-  const installationId = getInstallationId();
-  const { data, error } = await supabase
-    .from('import_history')
-    .select('*')
-    .eq('user_id', installationId)
-    .eq('import_type', 'frota')
-    .order('created_at', { ascending: false });
-
-  if (error) {
-    console.error('Error fetching frota import history:', error);
+  try {
+    return (await getSortedImports('frota')).map(toFrotaEntry);
+  } catch (err) {
+    console.error('Error fetching frota import history:', err);
     return [];
   }
-
-  return (data || []).map((d: Record<string, unknown>) => ({
-    id: d.id as string,
-    fileName: d.file_name as string,
-    totalRows: d.total_orders as number,
-    outputRows: d.total_groups as number,
-    duplicatesRemoved: d.checked_groups as number,
-    headers: d.headers_data as string[],
-    rows: d.rows_data as RawRow[],
-    importTime: d.import_time as string,
-  }));
 }
 
 export async function addImportEntry(
@@ -98,34 +118,30 @@ export async function addImportEntry(
   fileName: string,
   checkState: CheckState
 ): Promise<HistoryEntry | null> {
-  const installationId = getInstallationId();
-  const totalOrders = rows.length;
-  const totalGroups = groups.length;
-  const checkedGroups = Object.values(checkState.checked).filter(Boolean).length;
+  const now = new Date().toISOString();
+  const record: ImportRecord = {
+    id: newRecordId(),
+    fileName,
+    importType: 'flex',
+    importTime: now,
+    exportTime: null,
+    totalOrders: rows.length,
+    totalGroups: groups.length,
+    checkedGroups: countChecked(checkState),
+    rows,
+    groups,
+    headers,
+    checkState,
+    createdAt: now,
+  };
 
-  const { data, error } = await supabase
-    .from('import_history')
-    .insert({
-      user_id: installationId,
-      file_name: fileName,
-      total_orders: totalOrders,
-      total_groups: totalGroups,
-      checked_groups: checkedGroups,
-      rows_data: rows,
-      groups_data: groups,
-      headers_data: headers,
-      check_state_data: checkState,
-      import_type: 'flex',
-    })
-    .select()
-    .single();
-
-  if (error) {
-    console.error('Error adding import entry:', error);
+  try {
+    await putRecord('import_history', record);
+    return toHistoryEntry(record);
+  } catch (err) {
+    console.error('Error adding import entry:', err);
     return null;
   }
-
-  return mapHistoryEntry(data);
 }
 
 export async function addFrotaImportEntry(
@@ -136,37 +152,40 @@ export async function addFrotaImportEntry(
   headers: string[],
   rows: RawRow[]
 ): Promise<FrotaHistoryEntry | null> {
-  const installationId = getInstallationId();
-  const { data, error } = await supabase
-    .from('import_history')
-    .insert({
-      user_id: installationId,
-      file_name: fileName,
-      total_orders: totalRows,
-      total_groups: outputRows,
-      checked_groups: duplicatesRemoved,
-      headers_data: headers,
-      rows_data: rows,
-      import_type: 'frota',
-    })
-    .select()
-    .single();
+  const now = new Date().toISOString();
+  const record: ImportRecord = {
+    id: newRecordId(),
+    fileName,
+    importType: 'frota',
+    importTime: now,
+    exportTime: null,
+    totalOrders: totalRows,
+    totalGroups: outputRows,
+    checkedGroups: duplicatesRemoved,
+    rows,
+    groups: [],
+    headers,
+    checkState: EMPTY_CHECK_STATE,
+    createdAt: now,
+  };
 
-  if (error) {
-    console.error('Error adding frota import entry:', error);
+  try {
+    await putRecord('import_history', record);
+    return toFrotaEntry(record);
+  } catch (err) {
+    console.error('Error adding frota import entry:', err);
     return null;
   }
+}
 
-  return {
-    id: data.id,
-    fileName: data.file_name,
-    totalRows: data.total_orders,
-    outputRows: data.total_groups,
-    duplicatesRemoved: data.checked_groups,
-    headers: data.headers_data,
-    rows: data.rows_data,
-    importTime: data.import_time,
-  };
+async function patchImport(id: string, patch: Partial<ImportRecord>): Promise<void> {
+  try {
+    const record = await getRecord<ImportRecord>('import_history', id);
+    if (!record) return;
+    await putRecord('import_history', { ...record, ...patch });
+  } catch (err) {
+    console.error('Error updating import entry:', err);
+  }
 }
 
 export async function updateExportEntry(
@@ -174,21 +193,12 @@ export async function updateExportEntry(
   groups: DeliveryGroup[],
   checkState: CheckState
 ): Promise<void> {
-  const checkedGroups = Object.values(checkState.checked).filter(Boolean).length;
-
-  const { error } = await supabase
-    .from('import_history')
-    .update({
-      export_time: new Date().toISOString(),
-      groups_data: groups,
-      check_state_data: checkState,
-      checked_groups: checkedGroups,
-    })
-    .eq('id', id);
-
-  if (error) {
-    console.error('Error updating export entry:', error);
-  }
+  await patchImport(id, {
+    exportTime: new Date().toISOString(),
+    groups,
+    checkState,
+    checkedGroups: countChecked(checkState),
+  });
 }
 
 export async function updateHistoryProgress(
@@ -196,26 +206,18 @@ export async function updateHistoryProgress(
   groups: DeliveryGroup[],
   checkState: CheckState
 ): Promise<void> {
-  const checkedGroups = Object.values(checkState.checked).filter(Boolean).length;
-
-  const { error } = await supabase
-    .from('import_history')
-    .update({
-      groups_data: groups,
-      check_state_data: checkState,
-      checked_groups: checkedGroups,
-    })
-    .eq('id', id);
-
-  if (error) {
-    console.error('Error updating history progress:', error);
-  }
+  await patchImport(id, {
+    groups,
+    checkState,
+    checkedGroups: countChecked(checkState),
+  });
 }
 
 export async function deleteImportEntry(id: string): Promise<void> {
-  const { error } = await supabase.from('import_history').delete().eq('id', id);
-  if (error) {
-    console.error('Error deleting import entry:', error);
+  try {
+    await deleteRecord('import_history', id);
+  } catch (err) {
+    console.error('Error deleting import entry:', err);
   }
 }
 
@@ -249,27 +251,20 @@ export function reexportXlsx(entry: HistoryEntry): void {
 }
 
 export async function findByFileName(fileName: string): Promise<HistoryEntry | null> {
-  const installationId = getInstallationId();
-  const { data, error } = await supabase
-    .from('import_history')
-    .select('*')
-    .eq('user_id', installationId)
-    .eq('file_name', fileName)
-    .maybeSingle();
-
-  if (error || !data) return null;
-  return mapHistoryEntry(data);
+  try {
+    const match = (await getSortedImports()).find((r) => r.fileName === fileName);
+    return match ? toHistoryEntry(match) : null;
+  } catch (err) {
+    console.error('Error finding import by file name:', err);
+    return null;
+  }
 }
 
 export async function clearImportHistory(): Promise<{ success: boolean; error?: string }> {
-  const installationId = getInstallationId();
-  const { error } = await supabase
-    .from('import_history')
-    .delete()
-    .eq('user_id', installationId);
-
-  if (error) {
-    return { success: false, error: error.message };
+  try {
+    await clearStore('import_history');
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : 'Erro ao limpar histórico' };
   }
-  return { success: true };
 }

@@ -1,7 +1,6 @@
-import { supabase } from '../lib/supabase';
+import { getRecord, putRecord } from './localDb';
 
 export interface AppSettings {
-  id?: string;
   tutorialUrl: string;
   tutorialInterfaceUrl: string;
   tutorialFlexUrl: string;
@@ -19,47 +18,38 @@ const DEFAULT_SETTINGS: AppSettings = {
   apkCircuitUrl: DEFAULT_APK_URL,
 };
 
+const SETTINGS_RECORD_ID = 'default';
+
+interface SettingsRecord extends AppSettings {
+  id: string;
+}
+
 export async function getSettings(): Promise<AppSettings> {
-  const { data, error } = await supabase
-    .from('app_settings')
-    .select('*')
-    .maybeSingle();
-
-  if (error || !data) return DEFAULT_SETTINGS;
-
-  return {
-    id: data.id,
-    tutorialUrl: data.tutorial_url ?? '',
-    tutorialInterfaceUrl: data.tutorial_interface_url ?? '',
-    tutorialFlexUrl: data.tutorial_flex_url ?? '',
-    tutorialFrotaUrl: data.tutorial_frota_url ?? '',
-    apkCircuitUrl: data.apk_circuit_url ?? DEFAULT_APK_URL,
-  };
+  try {
+    const record = await getRecord<SettingsRecord>('app_settings', SETTINGS_RECORD_ID);
+    if (!record) return DEFAULT_SETTINGS;
+    return {
+      tutorialUrl: record.tutorialUrl ?? '',
+      tutorialInterfaceUrl: record.tutorialInterfaceUrl ?? '',
+      tutorialFlexUrl: record.tutorialFlexUrl ?? '',
+      tutorialFrotaUrl: record.tutorialFrotaUrl ?? '',
+      apkCircuitUrl: record.apkCircuitUrl ?? DEFAULT_APK_URL,
+    };
+  } catch (err) {
+    console.error('Failed to load settings:', err);
+    return DEFAULT_SETTINGS;
+  }
 }
 
 export async function saveSettings(settings: Partial<AppSettings>): Promise<{ success: boolean; error?: string }> {
   const current = await getSettings();
-  const next = { ...current, ...settings };
+  const next: SettingsRecord = { ...current, ...settings, id: SETTINGS_RECORD_ID };
 
-  const upsertData: Record<string, unknown> = {
-    tutorial_url: next.tutorialUrl,
-    tutorial_interface_url: next.tutorialInterfaceUrl,
-    tutorial_flex_url: next.tutorialFlexUrl,
-    tutorial_frota_url: next.tutorialFrotaUrl,
-    apk_circuit_url: next.apkCircuitUrl,
-  };
-
-  if (current.id) {
-    upsertData.id = current.id;
-  }
-
-  const { error } = await supabase
-    .from('app_settings')
-    .upsert(upsertData, { onConflict: 'id' });
-
-  if (error) {
-    console.error('Failed to save settings:', error);
-    return { success: false, error: error.message };
+  try {
+    await putRecord<SettingsRecord>('app_settings', next);
+  } catch (err) {
+    console.error('Failed to save settings:', err);
+    return { success: false, error: err instanceof Error ? err.message : 'Erro ao salvar' };
   }
 
   window.dispatchEvent(new CustomEvent('settings-changed'));

@@ -1,61 +1,51 @@
-import { supabase } from '../lib/supabase';
-import { getInstallationId } from './installationService';
+import { getAllRecords, getRecord, putRecord } from './localDb';
 
 export type TutorialType = 'flex' | 'interface' | 'frota';
+
+interface TutorialCompletionRecord {
+  id: TutorialType;
+  completed: boolean;
+  completed_at: string;
+}
 
 export async function completeTutorial(
   _userId: string,
   tutorialType: TutorialType
 ): Promise<boolean> {
-  const installationId = getInstallationId();
-  const { error } = await supabase
-    .from('user_tutorial_completions')
-    .upsert(
-      {
-        user_id: installationId,
-        tutorial_type: tutorialType,
-        completed: true,
-        completed_at: new Date().toISOString(),
-      },
-      { onConflict: 'user_id,tutorial_type' }
-    );
-
-  if (error) {
-    console.error('Error completing tutorial:', error);
+  try {
+    await putRecord<TutorialCompletionRecord>('tutorial_completions', {
+      id: tutorialType,
+      completed: true,
+      completed_at: new Date().toISOString(),
+    });
+    return true;
+  } catch (err) {
+    console.error('Error completing tutorial:', err);
     return false;
   }
-  return true;
 }
 
 export async function hasCompletedTutorial(
   _userId: string,
   tutorialType: TutorialType
 ): Promise<boolean> {
-  const installationId = getInstallationId();
-  const { data, error } = await supabase
-    .from('user_tutorial_completions')
-    .select('id')
-    .eq('user_id', installationId)
-    .eq('tutorial_type', tutorialType)
-    .maybeSingle();
-
-  if (error) {
-    console.error('Error checking tutorial completion:', error);
+  try {
+    const record = await getRecord<TutorialCompletionRecord>('tutorial_completions', tutorialType);
+    return !!record?.completed;
+  } catch (err) {
+    console.error('Error checking tutorial completion:', err);
     return false;
   }
-
-  return !!data;
 }
 
 export async function getCompletedTutorials(_userId: string): Promise<TutorialType[]> {
-  const installationId = getInstallationId();
-  const { data, error } = await supabase
-    .from('user_tutorial_completions')
-    .select('tutorial_type')
-    .eq('user_id', installationId);
-
-  if (error || !data) return [];
-  return data.map((d) => d.tutorial_type as TutorialType);
+  try {
+    const records = await getAllRecords<TutorialCompletionRecord>('tutorial_completions');
+    return records.filter((r) => r.completed).map((r) => r.id);
+  } catch (err) {
+    console.error('Error listing completed tutorials:', err);
+    return [];
+  }
 }
 
 export async function hasCompletedFlexTutorial(userId: string): Promise<boolean> {
