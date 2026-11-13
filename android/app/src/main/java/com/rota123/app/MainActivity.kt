@@ -556,7 +556,10 @@ class MainActivity : AppCompatActivity() {
             } catch (e: Exception) {
                 Log.e(TAG, "Erro ao iniciar botão flutuante", e)
             }
-            deliverOverlayState()
+            webView.postDelayed(
+                { deliverOverlayState() },
+                SERVICE_STATE_DELAY_MS
+            )
         }
     }
 
@@ -569,7 +572,10 @@ class MainActivity : AppCompatActivity() {
             } catch (e: Exception) {
                 Log.e(TAG, "Erro ao parar botão flutuante", e)
             }
-            deliverOverlayState()
+            webView.postDelayed(
+                { deliverOverlayState() },
+                SERVICE_STATE_DELAY_MS
+            )
         }
     }
 
@@ -584,7 +590,7 @@ class MainActivity : AppCompatActivity() {
             if (window.__rota123OverlayState) {
                 window.__rota123OverlayState($running);
             }
-        """".trimIndent()
+        """.trimIndent()
 
         webView.post {
             webView.evaluateJavascript(js, null)
@@ -2003,6 +2009,9 @@ class MainActivity : AppCompatActivity() {
 
         private const val PWA_URL =
             "https://otimizador-lc0t.bolt.host"
+
+        private const val SERVICE_STATE_DELAY_MS =
+            150L
 
         private const val DUPLICATE_SPEECH_WINDOW_MS =
             2500L
