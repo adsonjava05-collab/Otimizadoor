@@ -17,7 +17,9 @@ function getAndroidBridge(): AndroidBridge | null {
 
 let voicesLoaded = false;
 let cachedVoice: SpeechSynthesisVoice | null = null;
-let cachedPitch = 1.15;
+
+const MALE_PT_BR_VOICE_NAMES = ['Felipe', 'Antonio', 'Antônio'];
+const NATURAL_VOICE_HINTS = ['Natural', 'Neural', 'Online', 'Wavenet', 'Google'];
 
 function loadVoices(): void {
   if (voicesLoaded) return;
@@ -31,16 +33,11 @@ function loadVoices(): void {
     return;
   }
 
-  const maleVoice = ptVoices.find((v) => v.name.includes('Felipe'));
-  if (maleVoice) {
-    cachedVoice = maleVoice;
-    cachedPitch = 1.0;
-    return;
-  }
-
-  const femaleNames = ['Luciana', 'Maria', 'Vitória', 'Vitoria', 'Helena', 'pt-BR'];
-  cachedVoice = ptVoices.find((v) => femaleNames.some((n) => v.name.includes(n))) ?? ptVoices[0];
-  cachedPitch = 1.15;
+  const maleVoice = ptVoices.find((v) => MALE_PT_BR_VOICE_NAMES.some((n) => v.name.includes(n)));
+  cachedVoice =
+    maleVoice ??
+    ptVoices.find((v) => NATURAL_VOICE_HINTS.some((n) => v.name.includes(n))) ??
+    ptVoices[0];
 }
 
 if (typeof window !== 'undefined' && window.speechSynthesis) {
@@ -69,7 +66,7 @@ export function speakCompletion(totalOrders: number, durationMs: number): void {
   utterance.lang = 'pt-BR';
   if (cachedVoice) utterance.voice = cachedVoice;
   utterance.rate = 0.85;
-  utterance.pitch = cachedPitch;
+  utterance.pitch = 1.0;
   utterance.volume = 0.7;
 
   window.speechSynthesis.speak(utterance);
@@ -92,7 +89,7 @@ export function speakSequence(sequence: string, isMultiOrder: boolean): void {
   utterance.lang = 'pt-BR';
   if (cachedVoice) utterance.voice = cachedVoice;
   utterance.rate = 0.85;
-  utterance.pitch = cachedPitch;
+  utterance.pitch = 1.0;
   utterance.volume = 0.7;
 
   window.speechSynthesis.speak(utterance);

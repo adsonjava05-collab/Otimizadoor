@@ -995,16 +995,13 @@ class MainActivity : AppCompatActivity() {
                             }
                         }
 
-                        val maleVoiceSelected =
-                            preferredVoice?.name?.contains(MALE_VOICE_NAME, ignoreCase = true) == true
-
-                        // Parâmetros alinhados à versão Web (rate 0.85, pitch 1.15 feminina / 1.0 masculina).
+                        // Parâmetros alinhados à versão Web (rate 0.85, pitch 1.0).
                         engine.setSpeechRate(
                             0.85f
                         )
 
                         engine.setPitch(
-                            if (maleVoiceSelected) 1.0f else 1.15f
+                            1.0f
                         )
                     }
 
@@ -1062,18 +1059,9 @@ class MainActivity : AppCompatActivity() {
             val offline = candidates.filter { !it.isNetworkConnectionRequired }
             val pool = offline.ifEmpty { candidates }
 
-            // Voz masculina pt-BR tem prioridade; sem ela, mantém a voz feminina usada até aqui.
-            val preferredNames =
-                listOf(
-                    "luciana", "maria", "vitoria", "vitória",
-                    "helena", "pt-br"
-                )
-
-            pool.firstOrNull { v -> v.name.contains(MALE_VOICE_NAME, ignoreCase = true) }
-                ?: pool.firstOrNull { v ->
-                    preferredNames.any { n -> v.name.contains(n, ignoreCase = true) }
-                }
-                ?: pool.maxWithOrNull(compareBy { it.quality })
+            pool.firstOrNull { v ->
+                MALE_PT_BR_VOICE_NAMES.any { n -> v.name.contains(n, ignoreCase = true) }
+            } ?: pool.maxWithOrNull(compareBy { it.quality })
 
         } catch (e: Exception) {
 
@@ -2041,6 +2029,6 @@ class MainActivity : AppCompatActivity() {
         private const val MAX_SAVE_BYTES_BASE64 =
             20 * 1024 * 1024 / 3 * 4
 
-        private const val MALE_VOICE_NAME = "felipe"
+        private val MALE_PT_BR_VOICE_NAMES = listOf("felipe", "antonio", "antônio")
     }
 }

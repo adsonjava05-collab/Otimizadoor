@@ -1097,7 +1097,7 @@ function App() {
         />
       )}
 
-      {needRefresh && <UpdateModal onConfirm={() => updateSW(true)} />}
+      {needRefresh && <UpdateModal onConfirm={updateSW} />}
     </div>
   );
 }
