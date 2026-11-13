@@ -1,4 +1,4 @@
-package com.rota123.app
+package com.otimizaflash.app
 
 import android.Manifest
 import android.app.NotificationChannel
@@ -218,7 +218,7 @@ class Rota123PrintService : PrintService() {
         private const val NOTIFICATION_COLOR = 0xFF2563EB.toInt()
         private val VIBRATION_PATTERN = longArrayOf(0, 250, 150, 250)
         private const val FILE_PREFIX = "rota123-print-"
-        private const val FILE_AUTHORITY = "com.rota123.app.fileprovider"
+        private const val FILE_AUTHORITY = "com.otimizaflash.app.fileprovider"
         private const val PRINT_FILE_TTL_MS = 24L * 60 * 60 * 1000
     }
 }

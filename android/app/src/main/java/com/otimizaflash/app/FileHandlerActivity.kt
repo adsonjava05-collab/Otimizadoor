@@ -1,4 +1,4 @@
-package com.rota123.app
+package com.otimizaflash.app
 
 import android.content.Intent
 import android.net.Uri

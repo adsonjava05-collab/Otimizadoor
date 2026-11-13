@@ -1,4 +1,4 @@
-package com.rota123.app
+package com.otimizaflash.app
 
 import android.Manifest
 import android.annotation.SuppressLint
@@ -1255,7 +1255,7 @@ class MainActivity : AppCompatActivity() {
             val uri =
                 FileProvider.getUriForFile(
                     this,
-                    "com.rota123.app.fileprovider",
+                    "com.otimizaflash.app.fileprovider",
                     tempFile
                 )
 
@@ -1873,12 +1873,19 @@ class MainActivity : AppCompatActivity() {
             if (!hasOverlayPermission()) {
                 webView.post {
                     try {
-                        val intent = Intent(
+                        val overlayIntent = Intent(
                             android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
                             Uri.parse("package:$packageName")
                         )
 
-                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        val intent = if (overlayIntent.resolveActivity(packageManager) != null) {
+                            overlayIntent
+                        } else {
+                            Intent(
+                                android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                Uri.parse("package:$packageName")
+                            )
+                        }
 
                         overlayPermissionLauncher.launch(intent)
                     } catch (e: Exception) {
@@ -2000,7 +2007,7 @@ class MainActivity : AppCompatActivity() {
             "Rota123"
 
         private const val ACTION_OPEN_ROUTE =
-            "com.rota123.app.OPEN_ROUTE"
+            "com.otimizaflash.app.OPEN_ROUTE"
 
         private const val EXTRA_ROUTE_FILE_NAME =
             "route_file_name"
