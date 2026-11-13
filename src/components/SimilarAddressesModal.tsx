@@ -1,17 +1,17 @@
 import { useState } from 'react';
-import { Search, X, Check, GitMerge, Minus, EyeOff } from 'lucide-react';
-import type { SimilarityGroup } from '../services/similarAddressService';
+import { Search, X, Check, GitMerge, Minus, EyeOff, Star } from 'lucide-react';
+import type { SimilarityGroup, SimilarityDecision } from '../services/similarAddressService';
 
 type GroupDecision = 'unify' | 'keep' | 'ignore';
 
 interface GroupState {
   decision: GroupDecision;
-  chosenAddress: string;
+  selectedRowIndices: number[];
 }
 
 interface SimilarAddressesModalProps {
   groups: SimilarityGroup[];
-  onApply: (chosenAddresses: Record<string, string>) => void;
+  onApply: (decisions: SimilarityDecision[]) => void;
   onClose: () => void;
 }
 
@@ -23,31 +23,52 @@ export function SimilarAddressesModal({
   const [states, setStates] = useState<Record<string, GroupState>>(() => {
     const init: Record<string, GroupState> = {};
     for (const g of groups) {
-      init[g.id] = {
-        decision: 'ignore',
-        chosenAddress: g.members[0]?.optimizedAddress ?? '',
-      };
+      init[g.id] = { decision: 'ignore', selectedRowIndices: [] };
     }
     return init;
   });
+
+  const toggleMember = (groupId: string, rowIndex: number) => {
+    setStates((prev) => {
+      const cur = prev[groupId];
+      const isSelected = cur.selectedRowIndices.includes(rowIndex);
+      let newSelected: number[];
+
+      if (isSelected) {
+        newSelected = cur.selectedRowIndices.filter((idx) => idx !== rowIndex);
+      } else {
+        newSelected = [...cur.selectedRowIndices, rowIndex];
+      }
+
+      const decision: GroupDecision =
+        newSelected.length >= 2 ? 'unify' : cur.decision === 'unify' ? 'ignore' : cur.decision;
+
+      return { ...prev, [groupId]: { decision, selectedRowIndices: newSelected } };
+    });
+  };
 
   const setDecision = (groupId: string, decision: GroupDecision) => {
     setStates((prev) => ({ ...prev, [groupId]: { ...prev[groupId], decision } }));
   };
 
-  const setChosen = (groupId: string, address: string) => {
-    setStates((prev) => ({ ...prev, [groupId]: { ...prev[groupId], chosenAddress: address } }));
-  };
-
   const handleApply = () => {
-    const chosen: Record<string, string> = {};
+    const decisions: SimilarityDecision[] = [];
     for (const g of groups) {
       const st = states[g.id];
-      if (st?.decision === 'unify' && st.chosenAddress) {
-        chosen[g.id] = st.chosenAddress;
+      if (st?.decision === 'unify' && st.selectedRowIndices.length >= 2) {
+        const principalMember = g.members.find(
+          (m) => m.rowIndex === st.selectedRowIndices[0],
+        );
+        if (principalMember) {
+          decisions.push({
+            groupRowIndex: g.members[0].rowIndex,
+            selectedRowIndices: st.selectedRowIndices,
+            principalAddress: principalMember.originalAddress,
+          });
+        }
       }
     }
-    onApply(chosen);
+    onApply(decisions);
   };
 
   const pendingCount = groups.filter((g) => states[g.id]?.decision === 'ignore').length;
@@ -55,7 +76,6 @@ export function SimilarAddressesModal({
   return (
     <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/60 backdrop-blur-sm sm:items-center">
       <div className="flex max-h-[92vh] w-full max-w-lg flex-col rounded-t-3xl bg-white dark:bg-slate-800 sm:rounded-3xl">
-        {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4 dark:border-slate-700">
           <div className="flex items-center gap-2.5">
             <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-50 dark:bg-brand-900/30">
@@ -79,17 +99,19 @@ export function SimilarAddressesModal({
           </button>
         </div>
 
-        {/* Groups list — scrollable */}
         <div className="flex-1 overflow-y-auto px-4 py-4">
+          <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
+            Selecione os pedidos que pertencem ao mesmo endereço. O primeiro selecionado será o endereço principal.
+          </p>
           <div className="space-y-4">
             {groups.map((group, gi) => {
-              const st = states[group.id] ?? { decision: 'ignore' as GroupDecision, chosenAddress: '' };
+              const st = states[group.id] ?? { decision: 'ignore' as GroupDecision, selectedRowIndices: [] };
+              const canUnify = st.selectedRowIndices.length >= 2;
               return (
                 <div
                   key={group.id}
                   className="rounded-2xl border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-900/40"
                 >
-                  {/* Group header */}
                   <div className="flex items-center gap-2 px-4 pt-3.5">
                     <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-brand-100 text-xs font-bold text-brand-700 dark:bg-brand-900/40 dark:text-brand-300">
                       {gi + 1}
@@ -99,28 +121,27 @@ export function SimilarAddressesModal({
                     </p>
                   </div>
 
-                  {/* Address options */}
                   <div className="mt-2.5 space-y-1.5 px-4">
                     {group.members.map((member) => {
+                      const isSelected = st.selectedRowIndices.includes(member.rowIndex);
+                      const isPrincipal = isSelected && st.selectedRowIndices[0] === member.rowIndex;
                       const label = member.complement
-                        ? `${member.optimizedAddress} (${member.complement})`
-                        : member.optimizedAddress;
-                      const isSelected = st.decision === 'unify' && st.chosenAddress === member.optimizedAddress;
+                        ? `${member.originalAddress} (${member.complement})`
+                        : member.originalAddress;
                       return (
                         <button
                           key={member.rowIndex}
-                          onClick={() => {
-                            setChosen(group.id, member.optimizedAddress);
-                            setDecision(group.id, 'unify');
-                          }}
+                          onClick={() => toggleMember(group.id, member.rowIndex)}
                           className={`flex w-full items-start gap-2.5 rounded-xl border p-2.5 text-left transition-colors ${
-                            isSelected
+                            isPrincipal
                               ? 'border-brand-500 bg-brand-50 dark:border-brand-400 dark:bg-brand-900/20'
-                              : 'border-slate-200 bg-white hover:border-slate-300 dark:border-slate-600 dark:bg-slate-800 dark:hover:border-slate-500'
+                              : isSelected
+                                ? 'border-brand-300 bg-brand-50/50 dark:border-brand-700 dark:bg-brand-900/10'
+                                : 'border-slate-200 bg-white hover:border-slate-300 dark:border-slate-600 dark:bg-slate-800 dark:hover:border-slate-500'
                           }`}
                         >
                           <span
-                            className={`mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
+                            className={`mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-md border-2 transition-colors ${
                               isSelected
                                 ? 'border-brand-600 bg-brand-600 dark:border-brand-400 dark:bg-brand-400'
                                 : 'border-slate-300 dark:border-slate-600'
@@ -129,9 +150,17 @@ export function SimilarAddressesModal({
                             {isSelected && <Check className="h-3 w-3 text-white" />}
                           </span>
                           <div className="min-w-0 flex-1">
-                            <p className="text-sm font-medium text-slate-800 dark:text-slate-200">
-                              {label}
-                            </p>
+                            <div className="flex items-center gap-1.5">
+                              {isPrincipal && (
+                                <span className="inline-flex items-center gap-0.5 rounded-full bg-brand-600 px-1.5 py-0.5 text-[9px] font-bold text-white">
+                                  <Star className="h-2.5 w-2.5" />
+                                  PRINCIPAL
+                                </span>
+                              )}
+                              <p className="text-sm font-medium text-slate-800 dark:text-slate-200">
+                                {label}
+                              </p>
+                            </div>
                             <p className="mt-0.5 text-[11px] text-slate-400 dark:text-slate-500">
                               {member.spxTn && `SPX: ${member.spxTn}`}
                               {member.spxTn && member.sequence && ' · '}
@@ -144,14 +173,16 @@ export function SimilarAddressesModal({
                     })}
                   </div>
 
-                  {/* Decision buttons */}
                   <div className="flex gap-1.5 px-4 pb-3.5 pt-3">
                     <button
                       onClick={() => setDecision(group.id, 'unify')}
+                      disabled={!canUnify}
                       className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-xs font-semibold transition-colors ${
-                        st.decision === 'unify'
+                        st.decision === 'unify' && canUnify
                           ? 'bg-brand-600 text-white'
-                          : 'bg-white text-slate-600 hover:bg-slate-100 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700'
+                          : canUnify
+                            ? 'bg-white text-slate-600 hover:bg-slate-100 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700'
+                            : 'cursor-not-allowed bg-white text-slate-300 dark:bg-slate-800 dark:text-slate-600'
                       }`}
                     >
                       <GitMerge className="h-3.5 w-3.5" />
@@ -186,7 +217,6 @@ export function SimilarAddressesModal({
           </div>
         </div>
 
-        {/* Footer */}
         <div className="border-t border-slate-100 px-5 py-4 dark:border-slate-700">
           {pendingCount > 0 && (
             <p className="mb-2.5 text-center text-xs text-slate-400 dark:text-slate-500">

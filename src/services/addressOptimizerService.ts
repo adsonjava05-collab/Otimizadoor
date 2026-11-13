@@ -5,8 +5,22 @@ import {
 } from './xlsxReaderService';
 import { createTsvBlob } from './tsvService';
 import { groupDeliveriesWithOptions } from './groupingService';
-import { findSimilarAddresses, type SimilarityGroup } from './similarAddressService';
+import {
+  findSimilarAddresses,
+  applyUnificationToRows,
+  type SimilarityGroup,
+  type SimilarityDecision,
+} from './similarAddressService';
 import type { RawRow } from '../types';
+
+export interface AddressDetectResult {
+  similarGroups: SimilarityGroup[];
+  headers: string[];
+  rows: string[][];
+  addressIndex: number;
+  spxIndex: number;
+  sequenceIndex: number;
+}
 
 export interface AddressOptimizeResult {
   processedCount: number;
@@ -14,41 +28,23 @@ export interface AddressOptimizeResult {
   blob: Blob;
   totalOrders: number;
   totalStops: number;
-  similarGroups: SimilarityGroup[];
-  headers: string[];
-  rows: string[][];
-  addressIndex: number;
 }
 
-export async function optimizeAddressesFile(file: File): Promise<AddressOptimizeResult> {
-  const startTime = performance.now();
-  console.log('[ADDRESS OPTIMIZER] Starting optimization', {
-    fileName: file.name,
-    fileSize: `${(file.size / 1024).toFixed(2)} KB`,
-  });
-
+export async function readAndDetectSimilar(file: File): Promise<AddressDetectResult> {
   const { headers, rows } = await readXlsxByHeaders(file);
 
   if (rows.length === 0) {
-    console.warn('[ADDRESS OPTIMIZER] No rows found, returning empty');
     return {
-      processedCount: 0,
-      outputFileName: '',
-      blob: new Blob(),
-      totalOrders: 0,
-      totalStops: 0,
       similarGroups: [],
       headers,
       rows: [],
       addressIndex: -1,
+      spxIndex: -1,
+      sequenceIndex: -1,
     };
   }
 
   const indices = findColumnIndices(headers);
-  console.log('[ADDRESS OPTIMIZER] Column indices found', {
-    headers,
-    indices,
-  });
 
   if (indices.destinationAddress === -1) {
     throw new Error(
@@ -56,20 +52,51 @@ export async function optimizeAddressesFile(file: File): Promise<AddressOptimize
     );
   }
 
+  const similarGroups = findSimilarAddresses(
+    rows,
+    indices.destinationAddress,
+    indices.spxTn,
+    indices.sequence,
+  );
+
+  return {
+    similarGroups,
+    headers,
+    rows,
+    addressIndex: indices.destinationAddress,
+    spxIndex: indices.spxTn,
+    sequenceIndex: indices.sequence,
+  };
+}
+
+export function optimizeRows(
+  headers: string[],
+  rows: string[][],
+  addressIndex: number,
+  spxIndex: number,
+  sequenceIndex: number,
+  decisions: SimilarityDecision[],
+): AddressOptimizeResult {
+  let workingRows = rows;
+
+  if (decisions.length > 0) {
+    workingRows = applyUnificationToRows(rows, decisions, addressIndex);
+  }
+
   let processedCount = 0;
   let unchangedCount = 0;
   let alreadyCorrectCount = 0;
 
-  const optimizedRows = rows.map((row) => {
-    const addressCell = row[indices.destinationAddress]?.trim();
+  const optimizedRows = workingRows.map((row) => {
+    const addressCell = row[addressIndex]?.trim();
 
     if (addressCell) {
       const optimized = buildOfficialAddress(addressCell);
       if (optimized && optimized !== addressCell) {
-        row[indices.destinationAddress] = optimized;
+        row[addressIndex] = optimized;
         processedCount++;
       } else if (optimized) {
-        row[indices.destinationAddress] = optimized;
+        row[addressIndex] = optimized;
         alreadyCorrectCount++;
       } else {
         unchangedCount++;
@@ -81,13 +108,6 @@ export async function optimizeAddressesFile(file: File): Promise<AddressOptimize
     return row;
   });
 
-  const similarGroups = findSimilarAddresses(
-    optimizedRows,
-    indices.destinationAddress,
-    indices.spxTn,
-    indices.sequence,
-  );
-
   const now = new Date();
   const day = String(now.getDate()).padStart(2, '0');
   const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -97,10 +117,10 @@ export async function optimizeAddressesFile(file: File): Promise<AddressOptimize
 
   const statsRows: RawRow[] = optimizedRows.map((row, i) => ({
     colA: '',
-    sequence: indices.sequence >= 0 ? row[indices.sequence] : '',
+    sequence: sequenceIndex >= 0 ? row[sequenceIndex] : '',
     colC: '',
-    spxTn: indices.spxTn >= 0 ? row[indices.spxTn] : '',
-    destinationAddress: row[indices.destinationAddress],
+    spxTn: spxIndex >= 0 ? row[spxIndex] : '',
+    destinationAddress: row[addressIndex],
     colF: '',
     colG: '',
     colH: '',
@@ -111,26 +131,11 @@ export async function optimizeAddressesFile(file: File): Promise<AddressOptimize
   }));
   const totalStops = groupDeliveriesWithOptions(statsRows, true).length;
 
-  const elapsed = performance.now() - startTime;
-  console.log('[ADDRESS OPTIMIZER] Optimization complete', {
-    totalRows: rows.length,
-    processedCount,
-    alreadyCorrectCount,
-    unchangedCount,
-    similarGroups: similarGroups.length,
-    outputFileName,
-    processingTimeMs: elapsed.toFixed(2),
-  });
-
   return {
     processedCount,
     outputFileName,
     blob,
     totalOrders: rows.length,
     totalStops,
-    similarGroups,
-    headers,
-    rows: optimizedRows,
-    addressIndex: indices.destinationAddress,
   };
 }

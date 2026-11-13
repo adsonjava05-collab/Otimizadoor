@@ -6,12 +6,11 @@ import {
   FileText,
   Loader2,
   RotateCcw,
-  Search,
   Truck,
 } from 'lucide-react';
 import { importPdf } from '../services/importService';
 import { findByFileName, type HistoryEntry } from '../services/historyService';
-import { optimizeAddressesFile } from '../services/addressOptimizerService';
+import { readAndDetectSimilar, optimizeRows } from '../services/addressOptimizerService';
 import { ACTIVE_OPERATION_STEPS, type FlowState } from '../services/addressFlowService';
 import { openSavedFile, openTempTsv } from '../services/nativeDownload';
 import { AddressFlowProgress } from './AddressFlowProgress';
@@ -20,8 +19,7 @@ import { DuplicateFileModal } from './DuplicateFileModal';
 import { ConfirmModal } from './ConfirmModal';
 import { RouteProgress, routePhaseIndex } from './RouteProgress';
 import { SimilarAddressesModal } from './SimilarAddressesModal';
-import { applyUnification, type SimilarityGroup } from '../services/similarAddressService';
-import { createTsvBlob } from '../services/tsvService';
+import type { SimilarityGroup, SimilarityDecision } from '../services/similarAddressService';
 import type { RawRow } from '../types';
 
 const PRIMARY_BUTTON =
@@ -30,6 +28,15 @@ const SECONDARY_BUTTON =
   'flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-100 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700';
 const CANCEL_BUTTON =
   'rounded-xl px-4 py-2.5 text-sm font-medium text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-200';
+
+interface ExtPendingDecisions {
+  groups: SimilarityGroup[];
+  headers: string[];
+  rows: string[][];
+  addressIndex: number;
+  spxIndex: number;
+  sequenceIndex: number;
+}
 
 interface PrepareRouteScreenProps {
   flowState: FlowState;
@@ -48,12 +55,8 @@ interface PrepareRouteScreenProps {
   ) => Promise<boolean>;
   onRetrySave: () => void;
   onDownloadAgain: () => Promise<boolean>;
-  externalSimilarGroups?: SimilarityGroup[];
-  externalSimilarRows?: string[][];
-  externalSimilarHeaders?: string[];
-  externalSimilarAddressIndex?: number;
-  onClearExternalSimilar?: () => void;
-  onUpdatePreparedRoute?: (blob: Blob, fileName: string) => void;
+  externalPendingDecisions?: ExtPendingDecisions;
+  onClearExternalPending?: () => void;
 }
 
 function StatusPanel({
@@ -92,28 +95,29 @@ export function PrepareRouteScreen({
   onAddressOptimized,
   onRetrySave,
   onDownloadAgain,
-  externalSimilarGroups,
-  externalSimilarRows,
-  externalSimilarHeaders,
-  externalSimilarAddressIndex,
-  onClearExternalSimilar,
-  onUpdatePreparedRoute,
+  externalPendingDecisions,
+  onClearExternalPending,
 }: PrepareRouteScreenProps) {
   const xlsxInputRef = useRef<HTMLInputElement>(null);
   const pdfInputRef = useRef<HTMLInputElement>(null);
   const [addressLoading, setAddressLoading] = useState(false);
+  const [externalProcessing, setExternalProcessing] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
   const [pendingAddressFile, setPendingAddressFile] = useState<File | null>(null);
   const [pendingPdf, setPendingPdf] = useState<File | null>(null);
   const [existingEntry, setExistingEntry] = useState<HistoryEntry | null>(null);
   const [hasDownloaded, setHasDownloaded] = useState(false);
   const [selectedPhase, setSelectedPhase] = useState<number | null>(null);
-  const [localSimilarGroups, setLocalSimilarGroups] = useState<SimilarityGroup[]>([]);
-  const [similarRows, setSimilarRows] = useState<string[][]>([]);
-  const [similarHeaders, setSimilarHeaders] = useState<string[]>([]);
-  const [similarAddressIndex, setSimilarAddressIndex] = useState(-1);
+
+  const [pendingSimilar, setPendingSimilar] = useState<{
+    groups: SimilarityGroup[];
+    headers: string[];
+    rows: string[][];
+    addressIndex: number;
+    spxIndex: number;
+    sequenceIndex: number;
+  } | null>(null);
   const [showSimilarModal, setShowSimilarModal] = useState(false);
-  const [similarBannerDismissed, setSimilarBannerDismissed] = useState(false);
 
   const step = flowState.step;
   const hasOperation = step !== 'idle' && step !== 'completed';
@@ -176,32 +180,142 @@ export function PrepareRouteScreen({
     }
   };
 
+  const finalizeOptimization = async (
+    headers: string[],
+    rows: string[][],
+    addressIndex: number,
+    spxIndex: number,
+    sequenceIndex: number,
+    decisions: SimilarityDecision[],
+  ) => {
+    const result = optimizeRows(headers, rows, addressIndex, spxIndex, sequenceIndex, decisions);
+    if (!result.outputFileName) {
+      onError('Nenhum endereço encontrado no arquivo.');
+      return;
+    }
+    await onAddressOptimized(result.blob, result.outputFileName, {
+      totalOrders: result.totalOrders,
+      savedStops: Math.max(0, result.totalOrders - result.totalStops),
+      totalStops: result.totalStops,
+    });
+  };
+
   const runAddressFlow = async (file: File) => {
     setSelectedPhase(null);
     setHasDownloaded(false);
     setAddressLoading(true);
     try {
-      const result = await optimizeAddressesFile(file);
-      if (!result.outputFileName) {
+      const detected = await readAndDetectSimilar(file);
+      if (detected.rows.length === 0) {
         onError('Nenhum endereço encontrado no arquivo.');
         return;
       }
-      await onAddressOptimized(result.blob, result.outputFileName, {
-        totalOrders: result.totalOrders,
-        savedStops: Math.max(0, result.totalOrders - result.totalStops),
-        totalStops: result.totalStops,
-      });
-      if (result.similarGroups.length > 0) {
-        setLocalSimilarGroups(result.similarGroups);
-        setSimilarRows(result.rows);
-        setSimilarHeaders(result.headers);
-        setSimilarAddressIndex(result.addressIndex);
-        setSimilarBannerDismissed(false);
+      if (detected.similarGroups.length > 0) {
+        setPendingSimilar({
+          groups: detected.similarGroups,
+          headers: detected.headers,
+          rows: detected.rows,
+          addressIndex: detected.addressIndex,
+          spxIndex: detected.spxIndex,
+          sequenceIndex: detected.sequenceIndex,
+        });
+        setShowSimilarModal(true);
+      } else {
+        await finalizeOptimization(
+          detected.headers,
+          detected.rows,
+          detected.addressIndex,
+          detected.spxIndex,
+          detected.sequenceIndex,
+          [],
+        );
       }
     } catch (err) {
       onError(err instanceof Error ? err.message : 'Erro ao processar endereços.');
     } finally {
       setAddressLoading(false);
+    }
+  };
+
+  const handleApplySimilar = async (decisions: SimilarityDecision[]) => {
+    const pending = pendingSimilar;
+    setShowSimilarModal(false);
+    setPendingSimilar(null);
+    setAddressLoading(true);
+    try {
+      if (pending) {
+        await finalizeOptimization(
+          pending.headers,
+          pending.rows,
+          pending.addressIndex,
+          pending.spxIndex,
+          pending.sequenceIndex,
+          decisions,
+        );
+      }
+    } catch (err) {
+      onError(err instanceof Error ? err.message : 'Erro ao processar endereços.');
+    } finally {
+      setAddressLoading(false);
+    }
+  };
+
+  const handleSkipSimilar = () => {
+    setShowSimilarModal(false);
+    const pending = pendingSimilar;
+    setPendingSimilar(null);
+    if (pending) {
+      setAddressLoading(true);
+      finalizeOptimization(
+        pending.headers,
+        pending.rows,
+        pending.addressIndex,
+        pending.spxIndex,
+        pending.sequenceIndex,
+        [],
+      )
+        .catch((err) => onError(err instanceof Error ? err.message : 'Erro ao processar endereços.'))
+        .finally(() => setAddressLoading(false));
+    }
+  };
+
+  const handleApplyExternalDecisions = async (decisions: SimilarityDecision[]) => {
+    const pending = externalPendingDecisions;
+    onClearExternalPending?.();
+    setExternalProcessing(true);
+    try {
+      if (pending) {
+        await finalizeOptimization(
+          pending.headers,
+          pending.rows,
+          pending.addressIndex,
+          pending.spxIndex,
+          pending.sequenceIndex,
+          decisions,
+        );
+      }
+    } catch (err) {
+      onError(err instanceof Error ? err.message : 'Erro ao processar endereços.');
+    } finally {
+      setExternalProcessing(false);
+    }
+  };
+
+  const handleSkipExternalDecisions = () => {
+    const pending = externalPendingDecisions;
+    onClearExternalPending?.();
+    setExternalProcessing(true);
+    if (pending) {
+      finalizeOptimization(
+        pending.headers,
+        pending.rows,
+        pending.addressIndex,
+        pending.spxIndex,
+        pending.sequenceIndex,
+        [],
+      )
+        .catch((err) => onError(err instanceof Error ? err.message : 'Erro ao processar endereços.'))
+        .finally(() => setExternalProcessing(false));
     }
   };
 
@@ -270,12 +384,12 @@ export function PrepareRouteScreen({
   };
 
   const renderPanel = () => {
-    if (addressLoading) {
+    if (addressLoading || externalProcessing) {
       return (
         <StatusPanel
           icon={<Loader2 className="h-7 w-7 animate-spin text-brand-600 dark:text-brand-400" />}
-          title="Otimizando endereços..."
-          text="Estamos padronizando os endereços da sua planilha."
+          title="Processando endereços..."
+          text="Estamos analisando e padronizando os endereços da sua planilha."
         />
       );
     }
@@ -438,38 +552,6 @@ export function PrepareRouteScreen({
     );
   };
 
-  const activeSimilarGroups = externalSimilarGroups?.length
-    ? externalSimilarGroups
-    : localSimilarGroups;
-  const activeSimilarRows = externalSimilarGroups?.length
-    ? externalSimilarRows ?? []
-    : similarRows;
-  const activeSimilarHeaders = externalSimilarGroups?.length
-    ? externalSimilarHeaders ?? []
-    : similarHeaders;
-  const activeSimilarAddressIndex = externalSimilarGroups?.length
-    ? externalSimilarAddressIndex ?? -1
-    : similarAddressIndex;
-  const showSimilarBanner =
-    activeSimilarGroups.length > 0 && !similarBannerDismissed && !showSimilarModal;
-
-  const handleApplyUnification = (chosenAddresses: Record<string, string>) => {
-    const unifiedRows = applyUnification(
-      activeSimilarRows,
-      activeSimilarGroups,
-      chosenAddresses,
-      activeSimilarAddressIndex,
-    );
-    if (preparedRoute && onUpdatePreparedRoute) {
-      const newBlob = createTsvBlob(activeSimilarHeaders, unifiedRows);
-      onUpdatePreparedRoute(newBlob, preparedRoute.fileName);
-    }
-    setShowSimilarModal(false);
-    setSimilarBannerDismissed(true);
-    setLocalSimilarGroups([]);
-    onClearExternalSimilar?.();
-  };
-
   return (
     <section className="animate-fade-in space-y-5">
       <div className="flex items-start gap-3">
@@ -504,28 +586,19 @@ export function PrepareRouteScreen({
 
       {hasOperation && <AddressFlowProgress state={flowState} />}
 
-      {showSimilarBanner && (
-        <div className="flex items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-800 dark:bg-amber-900/20">
-          <div className="flex items-center gap-2.5">
-            <Search className="h-5 w-5 flex-shrink-0 text-amber-600 dark:text-amber-400" />
-            <p className="text-sm font-medium text-amber-800 dark:text-amber-300">
-              Encontramos possíveis endereços semelhantes.
-            </p>
-          </div>
-          <button
-            onClick={() => setShowSimilarModal(true)}
-            className="flex-shrink-0 rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-amber-700"
-          >
-            Revisar
-          </button>
-        </div>
+      {showSimilarModal && pendingSimilar && (
+        <SimilarAddressesModal
+          groups={pendingSimilar.groups}
+          onApply={handleApplySimilar}
+          onClose={handleSkipSimilar}
+        />
       )}
 
-      {showSimilarModal && (
+      {externalPendingDecisions && !showSimilarModal && (
         <SimilarAddressesModal
-          groups={activeSimilarGroups}
-          onApply={handleApplyUnification}
-          onClose={() => setShowSimilarModal(false)}
+          groups={externalPendingDecisions.groups}
+          onApply={handleApplyExternalDecisions}
+          onClose={handleSkipExternalDecisions}
         />
       )}
 
@@ -534,7 +607,7 @@ export function PrepareRouteScreen({
         type="file"
         accept=".xlsx"
         className="hidden"
-        disabled={addressLoading}
+        disabled={addressLoading || externalProcessing}
         onChange={(e) => {
           const file = e.target.files?.[0];
           if (file) handleXlsxSelected(file);

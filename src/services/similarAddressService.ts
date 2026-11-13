@@ -3,7 +3,6 @@ import { removeAccents, normalizeAddress } from './normalizeService';
 export interface SimilarityGroupMember {
   rowIndex: number;
   originalAddress: string;
-  optimizedAddress: string;
   number: string;
   cep: string;
   complement: string;
@@ -16,6 +15,12 @@ export interface SimilarityGroup {
   members: SimilarityGroupMember[];
 }
 
+export interface SimilarityDecision {
+  groupRowIndex: number;
+  selectedRowIndices: number[];
+  principalAddress: string;
+}
+
 const SIMILARITY_THRESHOLD = 0.82;
 
 function extractCep(address: string): string {
@@ -24,7 +29,6 @@ function extractCep(address: string): string {
 }
 
 function extractComplement(address: string): string {
-  const lower = removeAccents(address.toLowerCase());
   const patterns = [
     /\b(?:apto|apartamento|ap)\s*[\dº°a-z]+/i,
     /\b(?:bloco|bl)\s*[\dº°a-z]+/i,
@@ -104,12 +108,10 @@ export function findSimilarAddresses(
 ): SimilarityGroup[] {
   const entries = rows.map((row, i) => {
     const raw = (row[addressIndex] ?? '').trim();
-    const optimized = raw ? removeAccentsAndTitleCase(raw) : raw;
-    const norm = normalizeAddress(optimized);
+    const norm = normalizeAddress(raw);
     return {
       rowIndex: i,
       raw,
-      optimized,
       norm,
       cep: extractCep(raw),
       complement: extractComplement(raw),
@@ -145,7 +147,6 @@ export function findSimilarAddresses(
       const members: SimilarityGroupMember[] = cluster.map((idx) => ({
         rowIndex: entries[idx].rowIndex,
         originalAddress: entries[idx].raw,
-        optimizedAddress: entries[idx].optimized,
         number: entries[idx].norm.number,
         cep: entries[idx].cep,
         complement: entries[idx].complement,
@@ -163,34 +164,19 @@ export function findSimilarAddresses(
   return groups;
 }
 
-function removeAccentsAndTitleCase(address: string): string {
-  return address
-    .trim()
-    .split(/\s+/)
-    .map((word) => {
-      const lower = word.toLowerCase();
-      if (['da', 'de', 'do', 'das', 'dos', 'e'].includes(lower)) return lower;
-      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
-    })
-    .join(' ');
-}
-
-export function applyUnification(
+export function applyUnificationToRows(
   rows: string[][],
-  groups: SimilarityGroup[],
-  chosenAddresses: Record<string, string>,
+  decisions: SimilarityDecision[],
   addressIndex: number,
 ): string[][] {
   const result = rows.map((row) => [...row]);
 
-  for (const group of groups) {
-    const chosen = chosenAddresses[group.id];
-    if (!chosen) continue;
-
-    for (const member of group.members) {
-      const current = result[member.rowIndex][addressIndex] ?? '';
-      const complement = member.complement ? ` ${member.complement}` : '';
-      result[member.rowIndex][addressIndex] = `${chosen}${complement}`.trim();
+  for (const decision of decisions) {
+    for (const rowIdx of decision.selectedRowIndices) {
+      const current = result[rowIdx][addressIndex] ?? '';
+      const complement = extractComplement(current);
+      const complementStr = complement ? ` ${complement}` : '';
+      result[rowIdx][addressIndex] = `${decision.principalAddress}${complementStr}`.trim();
     }
   }
 
