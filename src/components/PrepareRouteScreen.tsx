@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ArrowLeft,
   ExternalLink,
@@ -70,29 +70,31 @@ export function PrepareRouteScreen({
   const viewedPhase =
     selectedPhase !== null && selectedPhase < currentPhase ? selectedPhase : currentPhase;
 
-  useEffect(() => {
-    const unregister = onRegisterBackHandler(() => {
-      if (existingEntry) {
-        setExistingEntry(null);
-        setPendingPdf(null);
-        return true;
-      }
-      if (pendingAddressFile) {
-        setPendingAddressFile(null);
-        return true;
-      }
-      if (selectedPhase !== null) {
-        setSelectedPhase(null);
-        return true;
-      }
-      if (currentPhase > 0) {
-        setSelectedPhase(currentPhase - 1);
+  const handleBack = useCallback(() => {
+    if (existingEntry) {
+      setExistingEntry(null);
+      setPendingPdf(null);
+      return true;
+    }
+    if (pendingAddressFile) {
+      setPendingAddressFile(null);
+      return true;
+    }
+    if (selectedPhase !== null) {
+      if (selectedPhase > 0) {
+        setSelectedPhase(selectedPhase - 1);
         return true;
       }
       return false;
-    });
-    return unregister;
-  }, [currentPhase, existingEntry, onRegisterBackHandler, pendingAddressFile, selectedPhase]);
+    }
+    if (currentPhase > 0) {
+      setSelectedPhase(currentPhase - 1);
+      return true;
+    }
+    return false;
+  }, [currentPhase, existingEntry, pendingAddressFile, selectedPhase]);
+
+  useEffect(() => onRegisterBackHandler(handleBack), [handleBack, onRegisterBackHandler]);
 
   const handleOpenFile = async () => {
     if (!preparedRoute) return;
@@ -408,8 +410,10 @@ export function PrepareRouteScreen({
     <section className="animate-fade-in space-y-5">
       <div className="flex items-start gap-3">
         <button
-          onClick={onBack}
-          aria-label="Voltar para a página inicial"
+          onClick={() => {
+            if (!handleBack()) onBack();
+          }}
+          aria-label="Voltar"
           className="mt-0.5 rounded-xl border border-slate-200 p-2 text-slate-600 transition-colors hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
         >
           <ArrowLeft className="h-5 w-5" />

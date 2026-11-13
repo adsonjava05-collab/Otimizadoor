@@ -166,8 +166,15 @@ export function FrotaScreen({ onBack, onError, onRegisterBackHandler }: FrotaScr
     <section className="animate-fade-in space-y-5">
       <div className="flex items-start gap-3">
         <button
-          onClick={onBack}
-          aria-label="Voltar para a página inicial"
+          onClick={() => {
+            if (result && !loading) {
+              setResult(null);
+              setHasDownloaded(false);
+            } else {
+              onBack();
+            }
+          }}
+          aria-label="Voltar"
           className="mt-0.5 rounded-xl border border-slate-200 p-2 text-slate-600 transition-colors hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
         >
           <ArrowLeft className="h-5 w-5" />
