@@ -14,7 +14,7 @@ export default defineConfig({
       manifest: {
         name: 'Otimiza Flash',
         short_name: 'Otimiza Flash',
-        description: 'Organize seus pedidos, otimize suas rotas e faca mais entregas em menos tempo.',
+        description: 'Sistema de bipagem e otimização de rotas.',
         theme_color: '#071426',
         background_color: '#071426',
         display: 'standalone',
