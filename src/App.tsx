@@ -34,19 +34,11 @@ import { UpdateModal } from './components/UpdateModal';
 import { GlobalAnnouncementModal } from './components/GlobalAnnouncementModal';
 import { TutorialsPage } from './components/TutorialsPage';
 import { FlexGuidedTour } from './components/FlexGuidedTour';
-import { WelcomeModal } from './components/WelcomeModal';
-import { InfoModal } from './components/InfoModal';
 import {
   getActiveAnnouncements,
   confirmAnnouncement,
   type GlobalAnnouncement,
 } from './services/announcementService';
-import {
-  hasSeenWelcomeModal,
-  markWelcomeModalSeen,
-  hasSeenInfoModal,
-  markInfoModalSeen,
-} from './services/welcomeService';
 import { completeTutorial as completeTutorialDb, skipTutorial as skipTutorialDb, shouldAutoOpenTutorial } from './services/tutorialService';
 import { usePWAUpdate } from './hooks/usePWAUpdate';
 import {
@@ -131,8 +123,6 @@ function App() {
   const [activeAnnouncement, setActiveAnnouncement] = useState<GlobalAnnouncement | null>(null);
 
   const [showTutorialsPage, setShowTutorialsPage] = useState(false);
-  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
-  const [showInfoModal, setShowInfoModal] = useState(false);
   const [showFlexTour, setShowFlexTour] = useState(false);
   const [showFrotaTour, setShowFrotaTour] = useState(false);
   const [floatingNumberOn, setFloatingNumberOn] = useState(() => isFloatingNumberSupported() && getFloatingNumberActive());
@@ -226,16 +216,6 @@ function App() {
     checkAnnouncements();
   }, [installationId]);
 
-  useEffect(() => {
-    const checkWelcome = async () => {
-      const seenWelcome = await hasSeenWelcomeModal();
-      if (!seenWelcome) {
-        setShowWelcomeModal(true);
-      }
-    };
-    checkWelcome();
-  }, []);
-
   const groupsRef = useRef<DeliveryGroup[]>(groups);
   const checkStateRef = useRef<CheckState>(checkState);
   const rowsRef = useRef<RawRow[]>(rows);
@@ -304,14 +284,6 @@ function App() {
       setShowFrotaTour(false);
       return true;
     }
-    if (showWelcomeModal) {
-      setShowWelcomeModal(false);
-      return true;
-    }
-    if (showInfoModal) {
-      setShowInfoModal(false);
-      return true;
-    }
     if (showExport) {
       setShowExport(false);
       return true;
@@ -355,7 +327,7 @@ function App() {
       return true;
     }
     return false;
-  }, [menuOpen, pendingImport, popupData, showAdmin, showAdminGate, showExport, showFlexTour, showFrota, showFrotaTour, showHistory, showInfoModal, showPrepareRoute, showTutorialsPage, showWelcomeModal]);
+  }, [menuOpen, pendingImport, popupData, showAdmin, showAdminGate, showExport, showFlexTour, showFrota, showFrotaTour, showHistory, showPrepareRoute, showTutorialsPage]);
 
   useEffect(() => {
     window.__rota123HandleBack = handleAndroidBack;
@@ -1099,35 +1071,6 @@ function App() {
           onConfirm={async () => {
             await confirmAnnouncement(installationId, activeAnnouncement.id);
             setActiveAnnouncement(null);
-          }}
-        />
-      )}
-
-      {/* Welcome Modal for first-time users */}
-      {showWelcomeModal && (
-        <WelcomeModal
-          onGoToTutorials={async () => {
-            await markWelcomeModalSeen();
-            setShowWelcomeModal(false);
-            setShowPrepareRoute(true);
-          }}
-          onAlreadyKnow={async () => {
-            await markWelcomeModalSeen();
-            setShowWelcomeModal(false);
-            const seenInfo = await hasSeenInfoModal();
-            if (!seenInfo) {
-              setShowInfoModal(true);
-            }
-          }}
-        />
-      )}
-
-      {/* Info Modal shown after "Já sei usar" */}
-      {showInfoModal && (
-        <InfoModal
-          onConfirm={async () => {
-            await markInfoModalSeen();
-            setShowInfoModal(false);
           }}
         />
       )}
