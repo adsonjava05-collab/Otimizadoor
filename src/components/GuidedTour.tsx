@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { X, ChevronLeft, ChevronRight, CheckCircle2 } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, CheckCircle2, AlertTriangle } from 'lucide-react';
 import type { ReactNode } from 'react';
 
 export interface TourStep {
@@ -17,6 +17,8 @@ interface GuidedTourProps {
 
 export function GuidedTour({ steps, onComplete, onSkip }: GuidedTourProps) {
   const [current, setCurrent] = useState(0);
+  const [showSkipConfirm, setShowSkipConfirm] = useState(false);
+  const [showSkipInfo, setShowSkipInfo] = useState(false);
   const total = steps.length;
   const step = steps[current];
   const isFirst = current === 0;
@@ -34,6 +36,17 @@ export function GuidedTour({ steps, onComplete, onSkip }: GuidedTourProps) {
     setCurrent((c) => Math.max(c - 1, 0));
   }, []);
 
+  const handleSkipClick = () => setShowSkipConfirm(true);
+  const handleSkipCancel = () => setShowSkipConfirm(false);
+  const handleSkipConfirmYes = () => {
+    setShowSkipConfirm(false);
+    setShowSkipInfo(true);
+  };
+  const handleSkipInfoOk = () => {
+    setShowSkipInfo(false);
+    onSkip();
+  };
+
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 backdrop-blur-sm px-4 py-6">
       <div className="flex max-h-[90vh] w-full max-w-md flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-800">
@@ -43,7 +56,7 @@ export function GuidedTour({ steps, onComplete, onSkip }: GuidedTourProps) {
             {current + 1} de {total}
           </span>
           <button
-            onClick={onSkip}
+            onClick={handleSkipClick}
             className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-700 dark:hover:text-slate-200"
           >
             <X className="h-4 w-4" />
@@ -118,6 +131,54 @@ export function GuidedTour({ steps, onComplete, onSkip }: GuidedTourProps) {
           )}
         </div>
       </div>
+
+      {/* Skip confirmation — step 1 */}
+      {showSkipConfirm && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 px-4">
+          <div className="w-full max-w-sm rounded-3xl border border-slate-200 bg-white p-6 text-center shadow-2xl dark:border-slate-700 dark:bg-slate-800">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/30">
+              <AlertTriangle className="h-7 w-7 text-amber-600 dark:text-amber-400" />
+            </div>
+            <p className="text-base font-bold text-slate-900 dark:text-white">
+              Tem certeza de que deseja pular o tutorial?
+            </p>
+            <div className="mt-6 flex gap-3">
+              <button
+                onClick={handleSkipConfirmYes}
+                className="flex-1 rounded-xl bg-brand-600 py-3 text-sm font-bold text-white transition-colors hover:bg-brand-700 active:scale-[0.98]"
+              >
+                Sim
+              </button>
+              <button
+                onClick={handleSkipCancel}
+                className="flex-1 rounded-xl border border-slate-200 bg-white py-3 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-100 active:scale-[0.98] dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600"
+              >
+                Não
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Skip info — step 2 */}
+      {showSkipInfo && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 px-4">
+          <div className="w-full max-w-sm rounded-3xl border border-slate-200 bg-white p-6 text-center shadow-2xl dark:border-slate-700 dark:bg-slate-800">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30">
+              <CheckCircle2 className="h-7 w-7 text-blue-600 dark:text-blue-400" />
+            </div>
+            <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+              Você pode rever este tutorial a qualquer momento em Configurações &gt; Tutoriais.
+            </p>
+            <button
+              onClick={handleSkipInfoOk}
+              className="mt-6 w-full rounded-xl bg-brand-600 py-3 text-sm font-bold text-white transition-colors hover:bg-brand-700 active:scale-[0.98]"
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

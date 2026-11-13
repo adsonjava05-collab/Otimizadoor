@@ -5,10 +5,11 @@ import { FrotaCard } from './FrotaCard';
 interface HomeCardsProps {
   flowState: FlowState;
   onOpenPrepareRoute: () => void;
+  onOpenFrota: () => void;
   onError: (message: string) => void;
 }
 
-export function HomeCards({ flowState, onOpenPrepareRoute, onError }: HomeCardsProps) {
+export function HomeCards({ flowState, onOpenPrepareRoute, onOpenFrota, onError }: HomeCardsProps) {
   const completed = flowState.step === 'completed';
 
   return (
@@ -38,7 +39,7 @@ export function HomeCards({ flowState, onOpenPrepareRoute, onError }: HomeCardsP
         </span>
       </button>
 
-      <FrotaCard onError={onError} />
+      <FrotaCard onError={onError} onFirstInteract={onOpenFrota} />
     </div>
   );
 }

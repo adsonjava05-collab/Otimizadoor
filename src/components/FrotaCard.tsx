@@ -8,14 +8,16 @@ import type { RawRow } from '../types';
 
 interface FrotaCardProps {
   onError?: (message: string) => void;
+  onFirstInteract?: () => void;
 }
 
-export function FrotaCard({ onError }: FrotaCardProps) {
+export function FrotaCard({ onError, onFirstInteract }: FrotaCardProps) {
   const frotaInputRef = useRef<HTMLInputElement>(null);
   const [frotaLoading, setFrotaLoading] = useState(false);
   const [frotaResult, setFrotaResult] = useState<{ blob: Blob; fileName: string } | null>(null);
   const [frotaStats, setFrotaStats] = useState<{ totalRows: number; outputRows: number; duplicatesRemoved: number } | null>(null);
   const [hasDownloaded, setHasDownloaded] = useState(false);
+  const interactedRef = useRef(false);
 
   const downloadFrotaFile = async (): Promise<boolean> => {
     if (!frotaResult) return false;
@@ -132,7 +134,13 @@ export function FrotaCard({ onError }: FrotaCardProps) {
         </div>
       ) : (
         <button
-          onClick={() => frotaInputRef.current?.click()}
+          onClick={() => {
+            if (!interactedRef.current) {
+              interactedRef.current = true;
+              onFirstInteract?.();
+            }
+            frotaInputRef.current?.click();
+          }}
           disabled={frotaLoading}
           className="flex w-full items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-orange-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 whitespace-nowrap"
         >

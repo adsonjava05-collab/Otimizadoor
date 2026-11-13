@@ -46,7 +46,7 @@ import {
   hasSeenInfoModal,
   markInfoModalSeen,
 } from './services/welcomeService';
-import { completeTutorial as completeTutorialDb, hasCompletedTutorial } from './services/tutorialService';
+import { completeTutorial as completeTutorialDb, skipTutorial as skipTutorialDb, shouldAutoOpenTutorial } from './services/tutorialService';
 import { usePWAUpdate } from './hooks/usePWAUpdate';
 import {
   getHistory,
@@ -74,6 +74,7 @@ import { deleteSharedFile, getLatestSharedFile, clearAllSharedFiles } from './se
 import { getFlowState, saveFlowState, clearFlowState, WAITING_PDF_STEPS, type FlowState } from './services/addressFlowService';
 import { saveBlobToDevice } from './services/nativeDownload';
 import { clearStoredRoute, loadStoredRoute, saveStoredRoute } from './services/routeFileStore';
+import { FrotaGuidedTour } from './components/FrotaGuidedTour';
 
 function App() {
   const { needRefresh, updateSW } = usePWAUpdate();
@@ -124,6 +125,7 @@ function App() {
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [showFlexTour, setShowFlexTour] = useState(false);
+  const [showFrotaTour, setShowFrotaTour] = useState(false);
   const [xlsxSharedFile, setXlsxSharedFile] = useState<SharedFileData | null>(null);
   const [externalProcessing, setExternalProcessing] = useState(false);
   const [flowState, setFlowState] = useState<FlowState>(() => getFlowState());
@@ -213,16 +215,13 @@ function App() {
   }, [installationId]);
 
   useEffect(() => {
-    const checkTutorialsAndWelcome = async () => {
+    const checkWelcome = async () => {
       const seenWelcome = await hasSeenWelcomeModal();
       if (!seenWelcome) {
         setShowWelcomeModal(true);
-        return;
       }
-      const completed = await hasCompletedTutorial(installationId, 'flex');
-      if (!completed) setShowFlexTour(true);
     };
-    checkTutorialsAndWelcome();
+    checkWelcome();
   }, []);
 
   const groupsRef = useRef<DeliveryGroup[]>(groups);
@@ -828,7 +827,13 @@ function App() {
             ) : (
               <HomeCards
                 flowState={flowState}
-                onOpenPrepareRoute={() => setShowPrepareRoute(true)}
+                onOpenPrepareRoute={() => {
+                  setShowPrepareRoute(true);
+                  if (shouldAutoOpenTutorial('flex')) setShowFlexTour(true);
+                }}
+                onOpenFrota={() => {
+                  if (shouldAutoOpenTutorial('frota')) setShowFrotaTour(true);
+                }}
                 onError={(m) => addToast('error', m)}
               />
             )
@@ -961,7 +966,8 @@ function App() {
           onGoToTutorials={async () => {
             await markWelcomeModalSeen();
             setShowWelcomeModal(false);
-            setShowFlexTour(true);
+            setShowPrepareRoute(true);
+            if (shouldAutoOpenTutorial('flex')) setShowFlexTour(true);
           }}
           onAlreadyKnow={async () => {
             await markWelcomeModalSeen();
@@ -1010,7 +1016,23 @@ function App() {
             setShowFlexTour(false);
             try { await completeTutorialDb(installationId, 'flex'); } catch { /* ignore */ }
           }}
-          onSkip={() => setShowFlexTour(false)}
+          onSkip={async () => {
+            setShowFlexTour(false);
+            try { await skipTutorialDb(installationId, 'flex'); } catch { /* ignore */ }
+          }}
+        />
+      )}
+
+      {showFrotaTour && (
+        <FrotaGuidedTour
+          onComplete={async () => {
+            setShowFrotaTour(false);
+            try { await completeTutorialDb(installationId, 'frota'); } catch { /* ignore */ }
+          }}
+          onSkip={async () => {
+            setShowFrotaTour(false);
+            try { await skipTutorialDb(installationId, 'frota'); } catch { /* ignore */ }
+          }}
         />
       )}
 
