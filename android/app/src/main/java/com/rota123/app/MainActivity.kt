@@ -331,7 +331,7 @@ class MainActivity : AppCompatActivity() {
             settings.allowContentAccess = true
 
             settings.cacheMode =
-                android.webkit.WebSettings.LOAD_DEFAULT
+                android.webkit.WebSettings.LOAD_NO_CACHE
 
             // =================================================
             // NAVEGAÇÃO
