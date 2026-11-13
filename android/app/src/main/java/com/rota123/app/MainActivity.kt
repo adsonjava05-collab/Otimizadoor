@@ -607,7 +607,7 @@ class MainActivity : AppCompatActivity() {
 
             "rota123.com.br",
             "www.rota123.com.br",
-            "roteirizador-1khn.bolt.host" -> true
+            "otimizador-lc0t.bolt.host" -> true
 
             else -> false
         }
@@ -2002,7 +2002,7 @@ class MainActivity : AppCompatActivity() {
             ConcurrentHashMap<String, Uri>()
 
         private const val PWA_URL =
-            "https://roteirizador-1khn.bolt.host"
+            "https://otimizador-lc0t.bolt.host"
 
         private const val DUPLICATE_SPEECH_WINDOW_MS =
             2500L

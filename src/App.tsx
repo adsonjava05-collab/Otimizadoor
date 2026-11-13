@@ -805,10 +805,10 @@ function App() {
                         <Users className="h-5 w-5 text-purple-500" />
                         Administração
                       </button>
-                      <div className="flex w-full items-center justify-between px-4 py-3.5">
-                        <span className="flex items-center gap-3 text-sm font-medium text-slate-700 dark:text-slate-200">
-                          <Hash className="h-5 w-5 text-emerald-500" />
-                          Gerar Número
+                      <div className="flex w-full min-w-0 items-center justify-between gap-3 px-4 py-3.5">
+                        <span className="flex min-w-0 items-center gap-3 text-sm font-medium text-slate-700 dark:text-slate-200">
+                          <Hash className="h-5 w-5 shrink-0 text-emerald-500" />
+                          <span className="truncate">Gerar Número</span>
                         </span>
                         <button
                           role="switch"
@@ -817,7 +817,7 @@ function App() {
                           disabled={!isFloatingNumberSupported()}
                           title={isFloatingNumberSupported() ? undefined : 'Disponível somente no APK Android.'}
                           onClick={handleToggleFloatingNumber}
-                          className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
+                          className={`relative h-6 w-11 shrink-0 grow-0 basis-11 rounded-full transition-colors ${
                             floatingNumberOn
                               ? 'bg-emerald-500'
                               : 'bg-slate-300 dark:bg-slate-600'
