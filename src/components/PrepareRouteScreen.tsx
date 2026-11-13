@@ -13,7 +13,6 @@ import { findByFileName, type HistoryEntry } from '../services/historyService';
 import { optimizeAddressesFile } from '../services/addressOptimizerService';
 import { ACTIVE_OPERATION_STEPS, type FlowState } from '../services/addressFlowService';
 import { openSavedFile, openTempTsv } from '../services/nativeDownload';
-import { AddressFlowProgress } from './AddressFlowProgress';
 import { CircuitHandoffPanel } from './CircuitHandoffPanel';
 import { DuplicateFileModal } from './DuplicateFileModal';
 import { ConfirmModal } from './ConfirmModal';
@@ -65,7 +64,6 @@ export function PrepareRouteScreen({
   const [selectedPhase, setSelectedPhase] = useState<number | null>(null);
 
   const step = flowState.step;
-  const hasOperation = step !== 'idle' && step !== 'completed';
   const currentPhase = routePhaseIndex(step);
   const viewedPhase =
     selectedPhase !== null && selectedPhase < currentPhase ? selectedPhase : currentPhase;
@@ -411,8 +409,6 @@ export function PrepareRouteScreen({
           </p>
         )}
       </div>
-
-      {hasOperation && <AddressFlowProgress state={flowState} />}
 
       <input
         ref={xlsxInputRef}
