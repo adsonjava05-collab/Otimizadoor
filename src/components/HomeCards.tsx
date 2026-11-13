@@ -1,15 +1,13 @@
-import { ChevronRight, Truck } from 'lucide-react';
+import { ChevronRight, Truck, Users } from 'lucide-react';
 import type { FlowState } from '../services/addressFlowService';
-import { FrotaCard } from './FrotaCard';
 
 interface HomeCardsProps {
   flowState: FlowState;
   onOpenPrepareRoute: () => void;
   onOpenFrota: () => void;
-  onError: (message: string) => void;
 }
 
-export function HomeCards({ flowState, onOpenPrepareRoute, onOpenFrota, onError }: HomeCardsProps) {
+export function HomeCards({ flowState, onOpenPrepareRoute, onOpenFrota }: HomeCardsProps) {
   const completed = flowState.step === 'completed';
 
   return (
@@ -39,7 +37,25 @@ export function HomeCards({ flowState, onOpenPrepareRoute, onOpenFrota, onError 
         </span>
       </button>
 
-      <FrotaCard onError={onError} onOpen={onOpenFrota} />
+      <button
+        type="button"
+        onClick={onOpenFrota}
+        className="group flex flex-col rounded-2xl border border-slate-200 bg-white p-6 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md active:scale-[0.99] dark:border-slate-700 dark:bg-slate-800"
+      >
+        <div className="mb-4 flex items-center justify-between">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-orange-500 to-blue-700">
+            <Users className="h-6 w-6 text-white" />
+          </div>
+        </div>
+        <h3 className="text-lg font-bold text-slate-900 dark:text-white">Otimizar Frota</h3>
+        <p className="mt-1 mb-5 text-sm leading-relaxed text-slate-500 dark:text-slate-400">
+          Prepare sua frota para otimização.
+        </p>
+        <span className="mt-auto flex items-center gap-1 text-sm font-semibold text-brand-600 dark:text-brand-400">
+          Abrir
+          <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+        </span>
+      </button>
     </div>
   );
 }

@@ -14,13 +14,14 @@ interface RouteProgressProps {
   current: number;
   viewed: number;
   failed: boolean;
-  onSelect: (index: number) => void;
+  onSelect?: (index: number) => void;
+  labels?: string[];
 }
 
-export function RouteProgress({ current, viewed, failed, onSelect }: RouteProgressProps) {
+export function RouteProgress({ current, viewed, failed, onSelect, labels = ROUTE_PHASE_LABELS }: RouteProgressProps) {
   return (
     <ol className="flex items-center gap-2" aria-label="Progresso da preparação">
-      {ROUTE_PHASE_LABELS.map((label, index) => {
+      {labels.map((label, index) => {
         const reachable = index <= current;
         const filled = index <= current;
         const active = index === current;
@@ -28,8 +29,8 @@ export function RouteProgress({ current, viewed, failed, onSelect }: RouteProgre
           <li key={label} className="flex min-w-0 flex-1">
             <button
               type="button"
-              disabled={!reachable}
-              onClick={() => onSelect(index)}
+              disabled={!reachable || !onSelect}
+              onClick={() => onSelect?.(index)}
               aria-current={index === viewed ? 'step' : undefined}
               className="flex min-w-0 flex-1 flex-col gap-1.5 rounded-lg transition-opacity enabled:hover:opacity-80 disabled:cursor-default"
             >

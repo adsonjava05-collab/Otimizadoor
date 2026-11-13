@@ -19,6 +19,7 @@ import { playSuccess, playError, playWarning } from './services/soundService';
 import { speakSequence, speakCompletion } from './services/voiceService';
 import { HomeCards } from './components/HomeCards';
 import { PrepareRouteScreen } from './components/PrepareRouteScreen';
+import { FrotaScreen } from './components/FrotaScreen';
 import { Dashboard } from './components/Dashboard';
 import { Scanner } from './components/Scanner';
 import { SearchComponent } from './components/Search';
@@ -94,6 +95,7 @@ function App() {
   });
   const [toasts, setToasts] = useState<ToastData[]>([]);
   const [showPrepareRoute, setShowPrepareRoute] = useState(false);
+  const [showFrota, setShowFrota] = useState(false);
   const [preparedRoute, setPreparedRoute] = useState<{ blob: Blob; fileName: string } | null>(null);
   const [showExport, setShowExport] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
@@ -824,6 +826,11 @@ function App() {
                 onRetrySave={handleRetrySave}
                 onDownloadAgain={handleDownloadAgain}
               />
+            ) : showFrota ? (
+              <FrotaScreen
+                onBack={() => setShowFrota(false)}
+                onError={(m) => addToast('error', m)}
+              />
             ) : (
               <HomeCards
                 flowState={flowState}
@@ -832,9 +839,9 @@ function App() {
                   if (shouldAutoOpenTutorial('flex')) setShowFlexTour(true);
                 }}
                 onOpenFrota={() => {
+                  setShowFrota(true);
                   if (shouldAutoOpenTutorial('frota')) setShowFrotaTour(true);
                 }}
-                onError={(m) => addToast('error', m)}
               />
             )
           ) : (

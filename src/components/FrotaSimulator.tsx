@@ -17,7 +17,7 @@ export function SimFrotaImport() {
         <div className="mt-3 w-full">
           <div className="flex w-full items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-2.5 text-xs font-semibold text-white ring-2 ring-orange-300 ring-offset-2">
             <FileSpreadsheet className="h-4 w-4" />
-            Importar XLSX
+            Selecionar XLSX
           </div>
         </div>
       </div>
