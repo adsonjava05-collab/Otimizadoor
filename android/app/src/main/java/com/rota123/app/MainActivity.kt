@@ -995,13 +995,16 @@ class MainActivity : AppCompatActivity() {
                             }
                         }
 
-                        // Parâmetros alinhados à versão Web (rate 0.85, pitch 1.15).
+                        val maleVoiceSelected =
+                            preferredVoice?.name?.contains(MALE_VOICE_NAME, ignoreCase = true) == true
+
+                        // Parâmetros alinhados à versão Web (rate 0.85, pitch 1.15 feminina / 1.0 masculina).
                         engine.setSpeechRate(
                             0.85f
                         )
 
                         engine.setPitch(
-                            1.15f
+                            if (maleVoiceSelected) 1.0f else 1.15f
                         )
                     }
 
@@ -1056,21 +1059,21 @@ class MainActivity : AppCompatActivity() {
                 return null
             }
 
-            // Prioriza voz local (offline) de boa inteligibilidade.
-            // Alinhado à versão Web, que prefere vozes femininas pt-BR
-            // comuns (Luciana, Maria, Vitória, Helena, etc.).
-            val preferredNames =
-                listOf(
-                    "luciana", "maria", "vitoria", "vitória",
-                    "helena", "felipe", "pt-br"
-                )
-
             val offline = candidates.filter { !it.isNetworkConnectionRequired }
             val pool = offline.ifEmpty { candidates }
 
-            pool.firstOrNull { v ->
-                preferredNames.any { n -> v.name.contains(n, ignoreCase = true) }
-            } ?: pool.maxWithOrNull(compareBy { it.quality })
+            // Voz masculina pt-BR tem prioridade; sem ela, mantém a voz feminina usada até aqui.
+            val preferredNames =
+                listOf(
+                    "luciana", "maria", "vitoria", "vitória",
+                    "helena", "pt-br"
+                )
+
+            pool.firstOrNull { v -> v.name.contains(MALE_VOICE_NAME, ignoreCase = true) }
+                ?: pool.firstOrNull { v ->
+                    preferredNames.any { n -> v.name.contains(n, ignoreCase = true) }
+                }
+                ?: pool.maxWithOrNull(compareBy { it.quality })
 
         } catch (e: Exception) {
 
@@ -2037,5 +2040,7 @@ class MainActivity : AppCompatActivity() {
 
         private const val MAX_SAVE_BYTES_BASE64 =
             20 * 1024 * 1024 / 3 * 4
+
+        private const val MALE_VOICE_NAME = "felipe"
     }
 }
