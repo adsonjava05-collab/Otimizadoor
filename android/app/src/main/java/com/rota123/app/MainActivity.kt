@@ -25,6 +25,7 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -518,6 +519,24 @@ class MainActivity : AppCompatActivity() {
         }
 
         setContentView(webView)
+
+        onBackPressedDispatcher.addCallback(
+            this,
+            object : OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() {
+                    if (!webReady) {
+                        finish()
+                        return
+                    }
+
+                    webView.evaluateJavascript(
+                        "(window.__rota123HandleBack && window.__rota123HandleBack()) === true"
+                    ) { handled ->
+                        if (handled != "true") finish()
+                    }
+                }
+            }
+        )
 
         requestNotificationPermissionIfNeeded()
 

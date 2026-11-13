@@ -78,6 +78,12 @@ import { isFloatingNumberSupported, getFloatingNumberActive, requestStartFloatin
 import { clearStoredRoute, loadStoredRoute, saveStoredRoute } from './services/routeFileStore';
 import { FrotaGuidedTour } from './components/FrotaGuidedTour';
 
+declare global {
+  interface Window {
+    __rota123HandleBack?: () => boolean;
+  }
+}
+
 function App() {
   const { needRefresh, updateSW } = usePWAUpdate();
   const [loading, setLoading] = useState(true);
@@ -134,6 +140,8 @@ function App() {
   const [externalProcessing, setExternalProcessing] = useState(false);
   const [flowState, setFlowState] = useState<FlowState>(() => getFlowState());
   const [routeRestoring, setRouteRestoring] = useState(false);
+  const prepareBackHandlerRef = useRef<(() => boolean) | null>(null);
+  const frotaBackHandlerRef = useRef<(() => boolean) | null>(null);
 
   const installationId = useMemo(() => getInstallationId(), []);
 
@@ -272,6 +280,89 @@ function App() {
     const entries = await getHistory();
     setHistoryEntries(entries);
   }, []);
+
+  const registerPrepareBackHandler = useCallback((handler: (() => boolean) | null) => {
+    prepareBackHandlerRef.current = handler;
+    return () => {
+      if (prepareBackHandlerRef.current === handler) prepareBackHandlerRef.current = null;
+    };
+  }, []);
+
+  const registerFrotaBackHandler = useCallback((handler: (() => boolean) | null) => {
+    frotaBackHandlerRef.current = handler;
+    return () => {
+      if (frotaBackHandlerRef.current === handler) frotaBackHandlerRef.current = null;
+    };
+  }, []);
+
+  const handleAndroidBack = useCallback(() => {
+    if (showFlexTour) {
+      setShowFlexTour(false);
+      return true;
+    }
+    if (showFrotaTour) {
+      setShowFrotaTour(false);
+      return true;
+    }
+    if (showWelcomeModal) {
+      setShowWelcomeModal(false);
+      return true;
+    }
+    if (showInfoModal) {
+      setShowInfoModal(false);
+      return true;
+    }
+    if (showExport) {
+      setShowExport(false);
+      return true;
+    }
+    if (showHistory) {
+      setShowHistory(false);
+      return true;
+    }
+    if (pendingImport) {
+      setPendingImport(null);
+      return true;
+    }
+    if (popupData) {
+      setPopupData(null);
+      return true;
+    }
+    if (showAdminGate) {
+      setShowAdminGate(false);
+      return true;
+    }
+    if (showAdmin) {
+      setShowAdmin(false);
+      return true;
+    }
+    if (showTutorialsPage) {
+      setShowTutorialsPage(false);
+      return true;
+    }
+    if (menuOpen) {
+      setMenuOpen(false);
+      return true;
+    }
+    if (showPrepareRoute) {
+      if (prepareBackHandlerRef.current?.()) return true;
+      setShowPrepareRoute(false);
+      return true;
+    }
+    if (showFrota) {
+      if (frotaBackHandlerRef.current?.()) return true;
+      setShowFrota(false);
+      return true;
+    }
+    return false;
+  }, [menuOpen, pendingImport, popupData, showAdmin, showAdminGate, showExport, showFlexTour, showFrota, showFrotaTour, showHistory, showInfoModal, showPrepareRoute, showTutorialsPage, showWelcomeModal]);
+
+  useEffect(() => {
+    window.__rota123HandleBack = handleAndroidBack;
+    return () => {
+      delete window.__rota123HandleBack;
+    };
+  }, [handleAndroidBack]);
 
   const handleGoHome = useCallback(() => {
     setShowPrepareRoute(false);
@@ -868,11 +959,13 @@ function App() {
                 onAddressOptimized={handleStartAddressFlow}
                 onRetrySave={handleRetrySave}
                 onDownloadAgain={handleDownloadAgain}
+                onRegisterBackHandler={registerPrepareBackHandler}
               />
             ) : showFrota ? (
               <FrotaScreen
                 onBack={() => setShowFrota(false)}
                 onError={(m) => addToast('error', m)}
+                onRegisterBackHandler={registerFrotaBackHandler}
               />
             ) : (
               <HomeCards

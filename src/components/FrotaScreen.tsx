@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, FileSpreadsheet, Loader2, Users } from 'lucide-react';
 import { addFrotaImportEntry } from '../services/historyService';
 import { optimizeFrotaFile } from '../services/frotaOptimizerService';
@@ -13,6 +13,7 @@ const FROTA_PHASE_LABELS = ['Planilha', 'Arquivo da Frota'];
 interface FrotaScreenProps {
   onBack: () => void;
   onError: (message: string) => void;
+  onRegisterBackHandler: (handler: (() => boolean) | null) => () => void;
 }
 
 interface FrotaResult {
@@ -23,13 +24,25 @@ interface FrotaResult {
   duplicatesRemoved: number;
 }
 
-export function FrotaScreen({ onBack, onError }: FrotaScreenProps) {
+export function FrotaScreen({ onBack, onError, onRegisterBackHandler }: FrotaScreenProps) {
   const frotaInputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<FrotaResult | null>(null);
   const [hasDownloaded, setHasDownloaded] = useState(false);
 
   const currentPhase = result && !loading ? 1 : 0;
+
+  useEffect(() => {
+    const unregister = onRegisterBackHandler(() => {
+      if (result && !loading) {
+        setResult(null);
+        setHasDownloaded(false);
+        return true;
+      }
+      return false;
+    });
+    return unregister;
+  }, [loading, onRegisterBackHandler, result]);
 
   const downloadFrotaFile = async (): Promise<boolean> => {
     if (!result) return false;

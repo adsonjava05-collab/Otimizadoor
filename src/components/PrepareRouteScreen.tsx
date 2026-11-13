@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   ArrowLeft,
   ExternalLink,
@@ -37,6 +37,7 @@ interface PrepareRouteScreenProps {
   ) => Promise<boolean>;
   onRetrySave: () => void;
   onDownloadAgain: () => Promise<boolean>;
+  onRegisterBackHandler: (handler: (() => boolean) | null) => () => void;
 }
 
 export function PrepareRouteScreen({
@@ -52,6 +53,7 @@ export function PrepareRouteScreen({
   onAddressOptimized,
   onRetrySave,
   onDownloadAgain,
+  onRegisterBackHandler,
 }: PrepareRouteScreenProps) {
   const xlsxInputRef = useRef<HTMLInputElement>(null);
   const pdfInputRef = useRef<HTMLInputElement>(null);
@@ -67,6 +69,30 @@ export function PrepareRouteScreen({
   const currentPhase = routePhaseIndex(step);
   const viewedPhase =
     selectedPhase !== null && selectedPhase < currentPhase ? selectedPhase : currentPhase;
+
+  useEffect(() => {
+    const unregister = onRegisterBackHandler(() => {
+      if (existingEntry) {
+        setExistingEntry(null);
+        setPendingPdf(null);
+        return true;
+      }
+      if (pendingAddressFile) {
+        setPendingAddressFile(null);
+        return true;
+      }
+      if (selectedPhase !== null) {
+        setSelectedPhase(null);
+        return true;
+      }
+      if (currentPhase > 0) {
+        setSelectedPhase(currentPhase - 1);
+        return true;
+      }
+      return false;
+    });
+    return unregister;
+  }, [currentPhase, existingEntry, onRegisterBackHandler, pendingAddressFile, selectedPhase]);
 
   const handleOpenFile = async () => {
     if (!preparedRoute) return;
