@@ -67,23 +67,13 @@ import { useSharedFile, type SharedFileData } from './hooks/useSharedFile';
 import { XlsxChoiceModal } from './components/XlsxChoiceModal';
 import { importPdf } from './services/importService';
 import { findByFileName } from './services/historyService';
-import { readAndDetectSimilar } from './services/addressOptimizerService';
+import { optimizeAddressesFile } from './services/addressOptimizerService';
 import { optimizeFrotaFile } from './services/frotaOptimizerService';
 import { addFrotaImportEntry } from './services/historyService';
 import { deleteSharedFile, getLatestSharedFile, clearAllSharedFiles } from './services/sharedFileService';
 import { getFlowState, saveFlowState, clearFlowState, WAITING_PDF_STEPS, type FlowState } from './services/addressFlowService';
 import { saveBlobToDevice } from './services/nativeDownload';
 import { clearStoredRoute, loadStoredRoute, saveStoredRoute } from './services/routeFileStore';
-import type { SimilarityGroup } from './services/similarAddressService';
-
-interface ExtPendingDecisions {
-  groups: SimilarityGroup[];
-  headers: string[];
-  rows: string[][];
-  addressIndex: number;
-  spxIndex: number;
-  sequenceIndex: number;
-}
 
 function App() {
   const { needRefresh, updateSW } = usePWAUpdate();
@@ -138,7 +128,6 @@ function App() {
   const [externalProcessing, setExternalProcessing] = useState(false);
   const [flowState, setFlowState] = useState<FlowState>(() => getFlowState());
   const [routeRestoring, setRouteRestoring] = useState(false);
-  const [extPendingDecisions, setExtPendingDecisions] = useState<ExtPendingDecisions | null>(null);
 
   const installationId = useMemo(() => getInstallationId(), []);
 
@@ -477,22 +466,15 @@ function App() {
     setXlsxSharedFile(null);
     setExternalProcessing(true);
     try {
-      const detected = await readAndDetectSimilar(data.file);
-      if (detected.rows.length === 0) {
+      const { blob, outputFileName, totalOrders, totalStops } = await optimizeAddressesFile(data.file);
+      if (!outputFileName) {
         addToast('error', 'Nenhum endereço encontrado no arquivo.');
-      } else if (detected.similarGroups.length > 0) {
-        setExtPendingDecisions({
-          groups: detected.similarGroups,
-          headers: detected.headers,
-          rows: detected.rows,
-          addressIndex: detected.addressIndex,
-          spxIndex: detected.spxIndex,
-          sequenceIndex: detected.sequenceIndex,
-        });
-        setShowPrepareRoute(true);
       } else {
-        addToast('info', 'Nenhum endereço semelhante encontrado. Use a tela Preparar Rota para otimizar.');
-        setShowPrepareRoute(true);
+        await handleStartAddressFlow(blob, outputFileName, {
+          totalOrders,
+          savedStops: Math.max(0, totalOrders - totalStops),
+          totalStops,
+        });
       }
       const latest = await getLatestSharedFile();
       if (latest) await deleteSharedFile(latest.id);
@@ -502,7 +484,7 @@ function App() {
     } finally {
       setExternalProcessing(false);
     }
-  }, [xlsxSharedFile, addToast]);
+  }, [xlsxSharedFile, addToast, handleStartAddressFlow]);
 
   const handleChooseFrota = useCallback(async () => {
     if (!xlsxSharedFile) return;
@@ -842,8 +824,6 @@ function App() {
                 onAddressOptimized={handleStartAddressFlow}
                 onRetrySave={handleRetrySave}
                 onDownloadAgain={handleDownloadAgain}
-                externalPendingDecisions={extPendingDecisions ?? undefined}
-                onClearExternalPending={() => setExtPendingDecisions(null)}
               />
             ) : (
               <HomeCards

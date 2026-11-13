@@ -26,14 +26,20 @@ const LOWERCASE_WORDS = new Set([
   'e',
 ]);
 
-export function removeAccents(text: string): string {
+function removeAccents(text: string): string {
   return text.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 }
 
-function removeCommasAndExtra(text: string): string {
-  const noAccents = removeAccents(text);
-  const noCommas = noAccents.replace(/,/g, ' ');
-  return noCommas.replace(/\s+/g, ' ').trim();
+function cutAfterNumber(text: string): string {
+  const match = text.match(/^(.*?)(\d+)\s*,/);
+  if (match) {
+    return `${match[1].trim()} ${match[2]}`.trim();
+  }
+  return text;
+}
+
+function removePunctuation(text: string): string {
+  return text.replace(/[,.\/\-]/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
 function expandStreetType(tokens: string[]): { type: string; rest: string[] } {
@@ -78,7 +84,9 @@ function titleCase(text: string): string {
 }
 
 function processAddress(address: string): { type: string; streetName: string; number: string } {
-  const cleaned = removeCommasAndExtra(address);
+  const noAccents = removeAccents(address);
+  const cut = cutAfterNumber(noAccents);
+  const cleaned = removePunctuation(cut);
   const tokens = cleaned.split(/\s+/).filter(Boolean);
 
   const { type, rest: afterType } = expandStreetType(tokens);

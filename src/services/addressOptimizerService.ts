@@ -5,22 +5,7 @@ import {
 } from './xlsxReaderService';
 import { createTsvBlob } from './tsvService';
 import { groupDeliveriesWithOptions } from './groupingService';
-import {
-  findSimilarAddresses,
-  applyUnificationToRows,
-  type SimilarityGroup,
-  type SimilarityDecision,
-} from './similarAddressService';
 import type { RawRow } from '../types';
-
-export interface AddressDetectResult {
-  similarGroups: SimilarityGroup[];
-  headers: string[];
-  rows: string[][];
-  addressIndex: number;
-  spxIndex: number;
-  sequenceIndex: number;
-}
 
 export interface AddressOptimizeResult {
   processedCount: number;
@@ -30,21 +15,25 @@ export interface AddressOptimizeResult {
   totalStops: number;
 }
 
-export async function readAndDetectSimilar(file: File): Promise<AddressDetectResult> {
+export async function optimizeAddressesFile(file: File): Promise<AddressOptimizeResult> {
+  const startTime = performance.now();
+  console.log('[ADDRESS OPTIMIZER] Starting optimization', {
+    fileName: file.name,
+    fileSize: `${(file.size / 1024).toFixed(2)} KB`,
+  });
+
   const { headers, rows } = await readXlsxByHeaders(file);
 
   if (rows.length === 0) {
-    return {
-      similarGroups: [],
-      headers,
-      rows: [],
-      addressIndex: -1,
-      spxIndex: -1,
-      sequenceIndex: -1,
-    };
+    console.warn('[ADDRESS OPTIMIZER] No rows found, returning empty');
+    return { processedCount: 0, outputFileName: '', blob: new Blob(), totalOrders: 0, totalStops: 0 };
   }
 
   const indices = findColumnIndices(headers);
+  console.log('[ADDRESS OPTIMIZER] Column indices found', {
+    headers,
+    indices,
+  });
 
   if (indices.destinationAddress === -1) {
     throw new Error(
@@ -52,51 +41,20 @@ export async function readAndDetectSimilar(file: File): Promise<AddressDetectRes
     );
   }
 
-  const similarGroups = findSimilarAddresses(
-    rows,
-    indices.destinationAddress,
-    indices.spxTn,
-    indices.sequence,
-  );
-
-  return {
-    similarGroups,
-    headers,
-    rows,
-    addressIndex: indices.destinationAddress,
-    spxIndex: indices.spxTn,
-    sequenceIndex: indices.sequence,
-  };
-}
-
-export function optimizeRows(
-  headers: string[],
-  rows: string[][],
-  addressIndex: number,
-  spxIndex: number,
-  sequenceIndex: number,
-  decisions: SimilarityDecision[],
-): AddressOptimizeResult {
-  let workingRows = rows;
-
-  if (decisions.length > 0) {
-    workingRows = applyUnificationToRows(rows, decisions, addressIndex);
-  }
-
   let processedCount = 0;
   let unchangedCount = 0;
   let alreadyCorrectCount = 0;
 
-  const optimizedRows = workingRows.map((row) => {
-    const addressCell = row[addressIndex]?.trim();
+  const optimizedRows = rows.map((row) => {
+    const addressCell = row[indices.destinationAddress]?.trim();
 
     if (addressCell) {
       const optimized = buildOfficialAddress(addressCell);
       if (optimized && optimized !== addressCell) {
-        row[addressIndex] = optimized;
+        row[indices.destinationAddress] = optimized;
         processedCount++;
       } else if (optimized) {
-        row[addressIndex] = optimized;
+        row[indices.destinationAddress] = optimized;
         alreadyCorrectCount++;
       } else {
         unchangedCount++;
@@ -115,12 +73,14 @@ export function optimizeRows(
 
   const blob = createTsvBlob(headers, optimizedRows);
 
+  // Same equivalence criteria as the Flex scanner (groupingService), applied
+  // to the optimized rows for statistics only — no order is removed or merged.
   const statsRows: RawRow[] = optimizedRows.map((row, i) => ({
     colA: '',
-    sequence: sequenceIndex >= 0 ? row[sequenceIndex] : '',
+    sequence: indices.sequence >= 0 ? row[indices.sequence] : '',
     colC: '',
-    spxTn: spxIndex >= 0 ? row[spxIndex] : '',
-    destinationAddress: row[addressIndex],
+    spxTn: indices.spxTn >= 0 ? row[indices.spxTn] : '',
+    destinationAddress: row[indices.destinationAddress],
     colF: '',
     colG: '',
     colH: '',
@@ -131,11 +91,15 @@ export function optimizeRows(
   }));
   const totalStops = groupDeliveriesWithOptions(statsRows, true).length;
 
-  return {
+  const elapsed = performance.now() - startTime;
+  console.log('[ADDRESS OPTIMIZER] Optimization complete', {
+    totalRows: rows.length,
     processedCount,
+    alreadyCorrectCount,
+    unchangedCount,
     outputFileName,
-    blob,
-    totalOrders: rows.length,
-    totalStops,
-  };
+    processingTimeMs: elapsed.toFixed(2),
+  });
+
+  return { processedCount, outputFileName, blob, totalOrders: rows.length, totalStops };
 }
