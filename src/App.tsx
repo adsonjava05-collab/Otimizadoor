@@ -46,6 +46,7 @@ import {
   addImportEntry,
   updateExportEntry,
   updateHistoryProgress,
+  updateHistoryCompletion,
   type HistoryEntry,
 } from './services/historyService';
 import {
@@ -186,6 +187,7 @@ function App() {
           setCheckState(active.checkState);
           setCurrentHistoryId(active.id);
           setActiveFileName(active.fileName);
+          setFirstScanTime(active.firstScanAt ?? null);
         }
       } catch {
         // No active session is fine
@@ -370,9 +372,9 @@ function App() {
       setPopupData(null);
       setLastSequence(null);
       setAlreadyRead(false);
-      setFirstScanTime(null);
+      setFirstScanTime(entry.firstScanAt);
       setMenuOpen(false);
-      saveActiveSession(entry.id, entry.fileName, entry.rows, entry.groups, entry.headers, stateToUse);
+      saveActiveSession(entry.id, entry.fileName, entry.rows, entry.groups, entry.headers, stateToUse, entry.firstScanAt);
       addToast('success', 'Importacao retomada com sucesso.');
     },
     [addToast]
@@ -668,8 +670,11 @@ function App() {
       });
       if (voiceEnabledRef.current) speakSequence(result.individualSequence, result.group.spxTns.length > 1);
 
-      if (firstScanTime === null) {
-        setFirstScanTime(Date.now());
+      let startedAt = firstScanTimeRef.current;
+      if (startedAt === null) {
+        startedAt = Date.now();
+        firstScanTimeRef.current = startedAt;
+        setFirstScanTime(startedAt);
       }
 
       const newGroups = [...currentGroups];
@@ -684,18 +689,18 @@ function App() {
           currentRows,
           newGroups,
           currentHeaders,
-          newState
+          newState,
+          startedAt
         );
-        updateHistoryProgress(currentHistoryId, newGroups, newState);
+        updateHistoryProgress(currentHistoryId, newGroups, newState, startedAt);
       }
 
       const checkedCount = Object.values(newState.checked).filter(Boolean).length;
       const totalCount = Object.keys(newState.checked).length;
       if (totalCount > 0 && checkedCount >= totalCount) {
-        const startTime = firstScanTimeRef.current;
-        if (startTime && voiceEnabledRef.current) {
-          const elapsedMs = Date.now() - startTime;
-          const minutes = Math.round(elapsedMs / 60000);
+        const completedAt = Date.now();
+        if (voiceEnabledRef.current) {
+          const minutes = Math.round((completedAt - startedAt) / 60000);
           if (minutes >= 1) {
             setTimeout(() => speakCompletion(totalCount, minutes), 4500);
           }
@@ -703,6 +708,7 @@ function App() {
         setTimeout(() => {
           if (currentHistoryIdRef.current) {
             markSessionCompleted(currentHistoryIdRef.current);
+            updateHistoryCompletion(currentHistoryIdRef.current, completedAt);
           }
           if (getFlowState().step === 'pdf_imported') {
             updateFlow({ step: 'completed', error: null });

@@ -15,6 +15,8 @@ export interface HistoryEntry {
   headers: string[];
   checkState: CheckState;
   importType?: string;
+  firstScanAt: number | null;
+  completedAt: number | null;
 }
 
 export interface FrotaHistoryEntry {
@@ -42,6 +44,8 @@ interface ImportRecord {
   headers: string[];
   checkState: CheckState;
   createdAt: string;
+  firstScanAt?: number | null;
+  completedAt?: number | null;
 }
 
 const EMPTY_CHECK_STATE: CheckState = { checked: {}, spxToGroup: {} };
@@ -70,6 +74,8 @@ function toHistoryEntry(record: ImportRecord): HistoryEntry {
     headers: record.headers,
     checkState: record.checkState,
     importType: record.importType,
+    firstScanAt: record.firstScanAt ?? null,
+    completedAt: record.completedAt ?? null,
   };
 }
 
@@ -204,13 +210,19 @@ export async function updateExportEntry(
 export async function updateHistoryProgress(
   id: string,
   groups: DeliveryGroup[],
-  checkState: CheckState
+  checkState: CheckState,
+  firstScanAt: number | null
 ): Promise<void> {
   await patchImport(id, {
     groups,
     checkState,
     checkedGroups: countChecked(checkState),
+    firstScanAt,
   });
+}
+
+export async function updateHistoryCompletion(id: string, completedAt: number): Promise<void> {
+  await patchImport(id, { completedAt });
 }
 
 export async function deleteImportEntry(id: string): Promise<void> {

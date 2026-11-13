@@ -12,6 +12,7 @@ export interface ActiveSession {
   checkedCount: number;
   completed: boolean;
   updatedAt: string;
+  firstScanAt?: number | null;
 }
 
 export async function getActiveSession(): Promise<ActiveSession | null> {
@@ -31,7 +32,8 @@ export async function saveActiveSession(
   rows: RawRow[],
   groups: DeliveryGroup[],
   headers: string[],
-  checkState: CheckState
+  checkState: CheckState,
+  firstScanAt: number | null = null
 ): Promise<void> {
   const checkedCount = Object.values(checkState.checked).filter(Boolean).length;
 
@@ -47,6 +49,7 @@ export async function saveActiveSession(
       checkedCount,
       completed: false,
       updatedAt: new Date().toISOString(),
+      firstScanAt,
     });
   } catch (err) {
     console.error('Failed to save active session:', err);
