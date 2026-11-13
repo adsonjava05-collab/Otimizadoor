@@ -1110,7 +1110,6 @@ function App() {
             await markWelcomeModalSeen();
             setShowWelcomeModal(false);
             setShowPrepareRoute(true);
-            if (shouldAutoOpenTutorial('flex')) setShowFlexTour(true);
           }}
           onAlreadyKnow={async () => {
             await markWelcomeModalSeen();
