@@ -56,7 +56,7 @@ import {
   markSessionCompleted,
 } from './services/sessionService';
 import { getInstallationId } from './services/installationService';
-import { CheckCircle } from 'lucide-react';
+import { CompletionModal, type CompletionSummary } from './components/CompletionModal';
 import { useSharedFile, type SharedFileData } from './hooks/useSharedFile';
 import { XlsxChoiceModal } from './components/XlsxChoiceModal';
 import { importPdf } from './services/importService';
@@ -117,7 +117,7 @@ function App() {
   const [showAdmin, setShowAdmin] = useState(false);
   const [showAdminGate, setShowAdminGate] = useState(false);
   const [apkCircuitUrl, setApkCircuitUrlState] = useState('');
-  const [showCompletionModal, setShowCompletionModal] = useState(false);
+  const [completionSummary, setCompletionSummary] = useState<CompletionSummary | null>(null);
   const [activeFileName, setActiveFileName] = useState<string>('');
   const [firstScanTime, setFirstScanTime] = useState<number | null>(null);
 
@@ -699,12 +699,7 @@ function App() {
       const totalCount = Object.keys(newState.checked).length;
       if (totalCount > 0 && checkedCount >= totalCount) {
         const completedAt = Date.now();
-        if (voiceEnabledRef.current) {
-          const minutes = Math.round((completedAt - startedAt) / 60000);
-          if (minutes >= 1) {
-            setTimeout(() => speakCompletion(totalCount, minutes), 4500);
-          }
-        }
+        const durationMs = completedAt - startedAt;
         setTimeout(() => {
           if (currentHistoryIdRef.current) {
             markSessionCompleted(currentHistoryIdRef.current);
@@ -714,7 +709,8 @@ function App() {
             updateFlow({ step: 'completed', error: null });
             setPreparedRoute(null);
           }
-          setShowCompletionModal(true);
+          if (voiceEnabledRef.current) speakCompletion(totalCount, durationMs);
+          setCompletionSummary({ totalOrders: totalCount, durationMs });
         }, 4000);
       }
     },
@@ -1033,37 +1029,14 @@ function App() {
         )}
 
         {/* Completion Modal */}
-        {showCompletionModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-            <div className="mx-4 w-full max-w-sm rounded-3xl border border-slate-200 bg-white p-6 text-center dark:border-slate-700 dark:bg-slate-800">
-              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/30">
-                <CheckCircle className="h-8 w-8 text-emerald-500" />
-              </div>
-              <h3 className="mt-4 text-lg font-bold text-slate-900 dark:text-white">
-                Todos os pedidos foram conferidos com sucesso.
-              </h3>
-              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-                Deseja voltar para a tela inicial?
-              </p>
-              <div className="mt-6 flex gap-3">
-                <button
-                  onClick={() => {
-                    setShowCompletionModal(false);
-                    handleGoHome();
-                  }}
-                  className="flex-1 rounded-xl bg-brand-500 py-3 text-sm font-bold text-slate-900 transition-colors hover:bg-brand-400"
-                >
-                  Sim
-                </button>
-                <button
-                  onClick={() => setShowCompletionModal(false)}
-                  className="flex-1 rounded-xl border border-slate-200 bg-slate-50 py-3 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-300"
-                >
-                  Não
-                </button>
-              </div>
-            </div>
-          </div>
+        {completionSummary && (
+          <CompletionModal
+            summary={completionSummary}
+            onBackToStart={() => {
+              setCompletionSummary(null);
+              handleGoHome();
+            }}
+          />
         )}
       </div>
 

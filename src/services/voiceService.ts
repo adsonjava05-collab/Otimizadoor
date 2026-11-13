@@ -1,3 +1,5 @@
+import { formatOrdersCount, formatScanDuration } from './scanTimerService';
+
 type AndroidBridge = {
   isNativeApp?: () => boolean;
   isTtsReady?: () => boolean;
@@ -44,8 +46,8 @@ function speakNative(text: string): boolean {
   return true;
 }
 
-export function speakCompletion(totalOrders: number, minutes: number): void {
-  const text = `Você levou ${minutes} minutos para ler ${totalOrders} pedidos.`;
+export function speakCompletion(totalOrders: number, durationMs: number): void {
+  const text = `Bipagem concluída! Você levou ${formatScanDuration(durationMs)} para bipar ${formatOrdersCount(totalOrders)}.`;
 
   if (speakNative(text)) return;
 
