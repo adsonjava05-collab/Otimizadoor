@@ -79,7 +79,7 @@ export function ExportModal({
         >
           <div className="flex items-start gap-3">
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-100 dark:bg-brand-900/30">
-              <FileSpreadsheet className="h-6 w-6 text-brand-600 dark:text-brand-400" />
+              <FileSpreadsheet className="h-6 w-6 text-brand-700 dark:text-brand-400" />
             </div>
             <div className="flex-1">
               <h3 className="text-sm font-bold text-slate-900 dark:text-white">
@@ -90,7 +90,7 @@ export function ExportModal({
                 a sequência na coluna B. Os não conferidos permanecem exatamente
                 como estavam, mantendo o valor original na coluna B.
               </p>
-              <div className="mt-2 flex items-center gap-1.5 text-xs font-medium text-brand-600 dark:text-brand-400">
+              <div className="mt-2 flex items-center gap-1.5 text-xs font-medium text-brand-700 dark:text-brand-400">
                 <FileText className="h-3.5 w-3.5" />
                 {groups.length} grupo(s) no total
               </div>

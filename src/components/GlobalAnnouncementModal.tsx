@@ -31,7 +31,7 @@ export function GlobalAnnouncementModal({
       >
         {/* Header */}
         <div className="flex items-center gap-3 border-b border-slate-100 px-6 py-4 dark:border-slate-700">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-600">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand-500">
             <Megaphone className="h-6 w-6 text-white" />
           </div>
           <div className="flex-1">
@@ -64,7 +64,7 @@ export function GlobalAnnouncementModal({
           <button
             onClick={handleConfirm}
             disabled={confirming}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 py-3 text-sm font-bold text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-500 py-3 text-sm font-bold text-slate-900 transition-colors hover:bg-brand-400 disabled:opacity-50"
           >
             <CheckCircle className="h-5 w-5" />
             {confirming ? 'Confirmando...' : 'Entendi'}

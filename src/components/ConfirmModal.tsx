@@ -22,7 +22,7 @@ export function ConfirmModal({
   const confirmClass =
     confirmVariant === 'danger'
       ? 'bg-red-600 hover:bg-red-700'
-      : 'bg-brand-600 hover:bg-brand-700';
+      : 'bg-brand-500 hover:bg-brand-400';
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 backdrop-blur-sm sm:items-center">

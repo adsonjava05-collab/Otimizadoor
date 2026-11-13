@@ -76,7 +76,7 @@ export function SearchComponent({ rows, groups, checkState, onScan }: SearchProp
                 {!isChecked && (
                   <button
                     onClick={() => onScan(r.row.spxTn)}
-                    className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg bg-brand-600 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-700 active:scale-[0.98]"
+                    className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg bg-brand-500 py-2 text-sm font-semibold text-slate-900 transition-colors hover:bg-brand-400 active:scale-[0.98]"
                   >
                     <ScanLine className="h-4 w-4" />
                     Scannear

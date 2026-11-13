@@ -197,7 +197,7 @@ export function PrepareRouteScreen({
     if (viewedPhase === 0) {
       return (
         <StatusPanel
-          icon={<FileSpreadsheet className="h-7 w-7 text-brand-600 dark:text-brand-400" />}
+          icon={<FileSpreadsheet className="h-7 w-7 text-brand-700 dark:text-brand-400" />}
           title="Planilha otimizada"
           text="Esta etapa já foi concluída. Para usar outra planilha, troque-a aqui e a preparação atual será substituída."
         >
@@ -228,7 +228,7 @@ export function PrepareRouteScreen({
 
     return (
       <StatusPanel
-        icon={<FileText className="h-7 w-7 text-brand-600 dark:text-brand-400" />}
+        icon={<FileText className="h-7 w-7 text-brand-700 dark:text-brand-400" />}
         title="PDF da rota importado"
         text="Esta etapa já foi concluída."
       >
@@ -241,7 +241,7 @@ export function PrepareRouteScreen({
     if (addressLoading) {
       return (
         <StatusPanel
-          icon={<Loader2 className="h-7 w-7 animate-spin text-brand-600 dark:text-brand-400" />}
+          icon={<Loader2 className="h-7 w-7 animate-spin text-brand-700 dark:text-brand-400" />}
           title="Otimizando endereços..."
           text="Estamos padronizando os endereços da sua planilha."
         />
@@ -251,7 +251,7 @@ export function PrepareRouteScreen({
     if (routeRestoring) {
       return (
         <StatusPanel
-          icon={<Loader2 className="h-7 w-7 animate-spin text-brand-600 dark:text-brand-400" />}
+          icon={<Loader2 className="h-7 w-7 animate-spin text-brand-700 dark:text-brand-400" />}
           title="Recuperando a rota..."
           text="Estamos carregando o arquivo da rota salvo neste aparelho."
         />
@@ -261,7 +261,7 @@ export function PrepareRouteScreen({
     if (pdfLoading) {
       return (
         <StatusPanel
-          icon={<Loader2 className="h-7 w-7 animate-spin text-brand-600 dark:text-brand-400" />}
+          icon={<Loader2 className="h-7 w-7 animate-spin text-brand-700 dark:text-brand-400" />}
           title="Lendo o PDF da rota..."
           text="Isso leva apenas alguns instantes."
         />
@@ -273,7 +273,7 @@ export function PrepareRouteScreen({
     if (step === 'optimized') {
       return (
         <StatusPanel
-          icon={<Loader2 className="h-7 w-7 animate-spin text-brand-600 dark:text-brand-400" />}
+          icon={<Loader2 className="h-7 w-7 animate-spin text-brand-700 dark:text-brand-400" />}
           title="Salvando arquivo TSV..."
           text="Confirme o salvamento para continuar."
         />
@@ -283,7 +283,7 @@ export function PrepareRouteScreen({
     if (step === 'processing_pdf') {
       return (
         <StatusPanel
-          icon={<Loader2 className="h-7 w-7 animate-spin text-brand-600 dark:text-brand-400" />}
+          icon={<Loader2 className="h-7 w-7 animate-spin text-brand-700 dark:text-brand-400" />}
           title="Processando o PDF da rota..."
           text="Aguarde enquanto preparamos a sua rota."
         />
@@ -352,7 +352,7 @@ export function PrepareRouteScreen({
     if (step === 'pdf_stage') {
       return (
         <StatusPanel
-          icon={<FileText className="h-7 w-7 text-brand-600 dark:text-brand-400" />}
+          icon={<FileText className="h-7 w-7 text-brand-700 dark:text-brand-400" />}
           title="Aguardando o PDF da rota"
           text="Quando o Circuit gerar o PDF, importe o arquivo aqui ou envie-o pela impressora virtual."
         >
@@ -374,7 +374,7 @@ export function PrepareRouteScreen({
     if (step === 'pdf_imported') {
       return (
         <StatusPanel
-          icon={<Truck className="h-7 w-7 text-brand-600 dark:text-brand-400" />}
+          icon={<Truck className="h-7 w-7 text-brand-700 dark:text-brand-400" />}
           title="Rota em bipagem"
           text="A rota já foi importada. Para continuar a bipagem, abra-a pelo Histórico."
         >
@@ -385,7 +385,7 @@ export function PrepareRouteScreen({
 
     return (
       <StatusPanel
-        icon={<Truck className="h-7 w-7 text-brand-600 dark:text-brand-400" />}
+        icon={<Truck className="h-7 w-7 text-brand-700 dark:text-brand-400" />}
         title="Vamos preparar sua rota?"
         text="Selecione sua planilha do SPX."
       >

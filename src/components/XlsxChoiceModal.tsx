@@ -61,10 +61,10 @@ export function XlsxChoiceModal({
 
           <button
             onClick={onChooseFrota}
-            className="flex w-full items-center gap-4 rounded-2xl border border-slate-200 bg-white p-4 text-left transition-all hover:border-orange-400 hover:shadow-md active:scale-[0.98] dark:border-slate-700 dark:bg-slate-800 dark:hover:border-orange-500"
+            className="flex w-full items-center gap-4 rounded-2xl border border-slate-200 bg-white p-4 text-left transition-all hover:border-brand-400 hover:shadow-md active:scale-[0.98] dark:border-slate-700 dark:bg-slate-800 dark:hover:border-brand-500"
           >
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-orange-500 to-blue-700">
-              <Users className="h-6 w-6 text-white" />
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500 to-accent-400">
+              <Users className="h-6 w-6 text-slate-900" />
             </div>
             <div className="min-w-0">
               <h3 className="text-base font-bold text-slate-900 dark:text-white">

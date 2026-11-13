@@ -1,7 +1,7 @@
 import { FileSpreadsheet, FileText, ExternalLink, Download, ArrowRight, Camera, CheckCircle2, Truck, Loader2 } from 'lucide-react';
 import { RecommendedBadge } from './CircuitHandoffPanel';
 
-const PRIMARY_BTN = 'flex w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 py-2.5 text-xs font-semibold text-white';
+const PRIMARY_BTN = 'flex w-full items-center justify-center gap-2 rounded-xl bg-brand-500 px-4 py-2.5 text-xs font-semibold text-slate-900';
 const SECONDARY_BTN = 'flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-semibold text-slate-700 dark:border-slate-600 dark:text-slate-200';
 
 function MiniProgress({ phase }: { phase: 0 | 1 | 2 | 3 }) {
@@ -10,7 +10,7 @@ function MiniProgress({ phase }: { phase: 0 | 1 | 2 | 3 }) {
     <div className="flex items-center gap-2 px-4 pt-3">
       {labels.map((label, i) => (
         <div key={label} className="flex min-w-0 flex-1 flex-col gap-1">
-          <span className={`h-1 w-full rounded-full ${i <= phase ? 'bg-brand-600' : 'bg-slate-200 dark:bg-slate-700'}`} />
+          <span className={`h-1 w-full rounded-full ${i <= phase ? 'bg-brand-500' : 'bg-slate-200 dark:bg-slate-700'}`} />
           <span className={`truncate text-[9px] font-medium ${i <= phase ? 'text-slate-600 dark:text-slate-300' : 'text-slate-300 dark:text-slate-600'}`}>{label}</span>
         </div>
       ))}
@@ -23,12 +23,12 @@ export function SimHomeCard() {
     <div className="p-4">
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="flex flex-col rounded-2xl border-2 border-brand-500 bg-white p-4 dark:bg-slate-800">
-          <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700">
-            <Truck className="h-5 w-5 text-white" />
+          <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500 to-accent-400">
+            <Truck className="h-5 w-5 text-slate-900" />
           </div>
           <h4 className="text-sm font-bold text-slate-900 dark:text-white">Preparar Rota Flex</h4>
           <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">Prepare seus endereços em poucos passos.</p>
-          <span className="mt-3 flex items-center gap-1 text-[11px] font-semibold text-brand-600 dark:text-brand-400">
+          <span className="mt-3 flex items-center gap-1 text-[11px] font-semibold text-brand-700 dark:text-brand-400">
             Abrir <ArrowRight className="h-3 w-3" />
           </span>
         </div>
@@ -50,7 +50,7 @@ export function SimSelectXlsx() {
       <MiniProgress phase={0} />
       <div className="mt-4 flex flex-col items-center py-3 text-center">
         <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-50 dark:bg-brand-900/30">
-          <Truck className="h-6 w-6 text-brand-600 dark:text-brand-400" />
+          <Truck className="h-6 w-6 text-brand-700 dark:text-brand-400" />
         </div>
         <h4 className="text-sm font-bold text-slate-900 dark:text-white">Vamos preparar sua rota?</h4>
         <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">Selecione sua planilha do SPX.</p>
@@ -88,7 +88,7 @@ export function SimArquivoSpx() {
         </div>
         <div className="relative">
           <RecommendedBadge />
-          <div className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-semibold text-white ring-2 ring-blue-300 ring-offset-2">
+          <div className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-500 px-4 py-2.5 text-xs font-semibold text-slate-900 ring-2 ring-brand-300 ring-offset-2">
             <ExternalLink className="h-4 w-4" />
             Abrir o Circuit
           </div>
@@ -115,7 +115,7 @@ export function SimPdfStage() {
       <MiniProgress phase={2} />
       <div className="mt-4 flex flex-col items-center py-2 text-center">
         <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-50 dark:bg-brand-900/30">
-          <FileText className="h-6 w-6 text-brand-600 dark:text-brand-400" />
+          <FileText className="h-6 w-6 text-brand-700 dark:text-brand-400" />
         </div>
         <h4 className="text-sm font-bold text-slate-900 dark:text-white">Aguardando o PDF da rota</h4>
         <p className="mt-1 max-w-[220px] text-[11px] text-slate-500 dark:text-slate-400">

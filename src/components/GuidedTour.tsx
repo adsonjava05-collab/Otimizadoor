@@ -71,9 +71,9 @@ export function GuidedTour({ steps, onComplete, onSkip }: GuidedTourProps) {
               key={i}
               className={`h-1.5 rounded-full transition-all ${
                 i === current
-                  ? 'w-6 bg-brand-600 dark:bg-brand-400'
+                  ? 'w-6 bg-brand-500 dark:bg-brand-400'
                   : i < current
-                    ? 'w-1.5 bg-brand-400 dark:bg-brand-600'
+                    ? 'w-1.5 bg-brand-400 dark:bg-brand-500'
                     : 'w-1.5 bg-slate-200 dark:bg-slate-600'
               }`}
             />
@@ -115,7 +115,7 @@ export function GuidedTour({ steps, onComplete, onSkip }: GuidedTourProps) {
           {isLast ? (
             <button
               onClick={onComplete}
-              className="flex items-center gap-1.5 rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-brand-700 active:scale-[0.98]"
+              className="flex items-center gap-1.5 rounded-xl bg-brand-500 px-5 py-2.5 text-sm font-bold text-slate-900 transition-colors hover:bg-brand-400 active:scale-[0.98]"
             >
               <CheckCircle2 className="h-4 w-4" />
               Concluir tutorial
@@ -123,7 +123,7 @@ export function GuidedTour({ steps, onComplete, onSkip }: GuidedTourProps) {
           ) : (
             <button
               onClick={next}
-              className="flex items-center gap-1 rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-brand-700 active:scale-[0.98]"
+              className="flex items-center gap-1 rounded-xl bg-brand-500 px-5 py-2.5 text-sm font-bold text-slate-900 transition-colors hover:bg-brand-400 active:scale-[0.98]"
             >
               Próximo
               <ChevronRight className="h-4 w-4" />
@@ -145,7 +145,7 @@ export function GuidedTour({ steps, onComplete, onSkip }: GuidedTourProps) {
             <div className="mt-6 flex gap-3">
               <button
                 onClick={handleSkipConfirmYes}
-                className="flex-1 rounded-xl bg-brand-600 py-3 text-sm font-bold text-white transition-colors hover:bg-brand-700 active:scale-[0.98]"
+                className="flex-1 rounded-xl bg-brand-500 py-3 text-sm font-bold text-slate-900 transition-colors hover:bg-brand-400 active:scale-[0.98]"
               >
                 Sim
               </button>
@@ -164,15 +164,15 @@ export function GuidedTour({ steps, onComplete, onSkip }: GuidedTourProps) {
       {showSkipInfo && (
         <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 px-4">
           <div className="w-full max-w-sm rounded-3xl border border-slate-200 bg-white p-6 text-center shadow-2xl dark:border-slate-700 dark:bg-slate-800">
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30">
-              <CheckCircle2 className="h-7 w-7 text-blue-600 dark:text-blue-400" />
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-brand-100 dark:bg-brand-900/30">
+              <CheckCircle2 className="h-7 w-7 text-brand-700 dark:text-brand-400" />
             </div>
             <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300">
               Você pode rever este tutorial a qualquer momento em Configurações &gt; Tutoriais.
             </p>
             <button
               onClick={handleSkipInfoOk}
-              className="mt-6 w-full rounded-xl bg-brand-600 py-3 text-sm font-bold text-white transition-colors hover:bg-brand-700 active:scale-[0.98]"
+              className="mt-6 w-full rounded-xl bg-brand-500 py-3 text-sm font-bold text-slate-900 transition-colors hover:bg-brand-400 active:scale-[0.98]"
             >
               OK
             </button>

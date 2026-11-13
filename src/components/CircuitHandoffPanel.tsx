@@ -25,7 +25,7 @@ export function CircuitHandoffPanel({
   return (
     <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/60">
       <div className="flex items-center gap-3">
-        <FileSpreadsheet className="h-5 w-5 shrink-0 text-brand-600 dark:text-brand-400" />
+        <FileSpreadsheet className="h-5 w-5 shrink-0 text-brand-700 dark:text-brand-400" />
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">{fileName}</p>
           <p className="mt-0.5 flex items-center gap-1 text-xs font-medium text-emerald-700 dark:text-emerald-400">
@@ -39,7 +39,7 @@ export function CircuitHandoffPanel({
         <RecommendedBadge />
         <button
           onClick={onOpenCircuit}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-700 active:scale-[0.98]"
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-500 px-4 py-3 text-sm font-semibold text-slate-900 transition-colors hover:bg-brand-400 active:scale-[0.98]"
         >
           <ExternalLink className="h-4 w-4" />
           Abrir o Circuit

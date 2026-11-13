@@ -24,14 +24,14 @@ const TUTORIALS: TutorialInfo[] = [
     title: 'Tutorial Flex (Interativo)',
     description: 'Apresentação guiada passo a passo do Preparar Rota',
     icon: Route,
-    iconBg: 'from-brand-500 to-brand-700',
+    iconBg: 'from-brand-500 to-accent-400',
   },
   {
     type: 'frota',
     title: 'Tutorial Frota (Interativo)',
     description: 'Apresentação guiada passo a passo do Otimizar Frota',
     icon: Users,
-    iconBg: 'from-orange-500 to-blue-700',
+    iconBg: 'from-brand-500 to-accent-400',
   },
 ];
 
@@ -88,7 +88,7 @@ export function TutorialsPage({ userId, onBack }: TutorialsPageProps) {
             <ArrowLeft className="h-5 w-5" />
           </button>
           <div className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-500">
               <PlayCircle className="h-5 w-5 text-white" />
             </div>
             <h1 className="text-lg font-bold text-slate-900 dark:text-white">Tutoriais</h1>
@@ -106,12 +106,12 @@ export function TutorialsPage({ userId, onBack }: TutorialsPageProps) {
               <button
                 key={tutorial.type}
                 onClick={() => setActiveTour(tutorial.type)}
-                className="group w-full rounded-3xl border border-slate-200 bg-white p-6 text-center shadow-sm transition-all hover:-translate-y-1 hover:border-blue-300 hover:shadow-xl dark:border-slate-700 dark:bg-slate-800 dark:hover:border-blue-500"
+                className="group w-full rounded-3xl border border-slate-200 bg-white p-6 text-center shadow-sm transition-all hover:-translate-y-1 hover:border-brand-300 hover:shadow-xl dark:border-slate-700 dark:bg-slate-800 dark:hover:border-brand-500"
               >
                 <div
                   className={`mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br ${tutorial.iconBg} transition-transform group-hover:scale-105`}
                 >
-                  <Icon className="h-8 w-8 text-white" />
+                  <Icon className="h-8 w-8 text-slate-900" />
                 </div>
 
                 <span
@@ -131,7 +131,7 @@ export function TutorialsPage({ userId, onBack }: TutorialsPageProps) {
                   {tutorial.description}
                 </p>
 
-                <div className="mt-6 flex items-center justify-center gap-1 text-sm font-semibold text-blue-600 transition-transform group-hover:translate-x-1 dark:text-blue-400">
+                <div className="mt-6 flex items-center justify-center gap-1 text-sm font-semibold text-brand-700 transition-transform group-hover:translate-x-1 dark:text-brand-400">
                   {isDone ? 'Refazer tutorial' : 'Iniciar tutorial'}
                   <ChevronRight className="h-4 w-4" />
                 </div>

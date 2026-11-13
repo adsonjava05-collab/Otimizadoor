@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 
 export const PRIMARY_BUTTON =
-  'flex w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-brand-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50';
+  'flex w-full items-center justify-center gap-2 rounded-xl bg-brand-500 px-4 py-3 text-sm font-semibold text-slate-900 transition-colors hover:bg-brand-400 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50';
 export const SECONDARY_BUTTON =
   'flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-100 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700';
 export const CANCEL_BUTTON =

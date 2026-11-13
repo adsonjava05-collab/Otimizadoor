@@ -26,7 +26,7 @@ export function GroupingConfirmModal({
       <div className="animate-slide-up w-full max-w-lg rounded-t-3xl bg-white p-5 dark:bg-slate-800 sm:rounded-3xl">
         <div className="mb-4 flex items-center gap-3">
           <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-100 dark:bg-brand-900/30">
-            <Layers className="h-6 w-6 text-brand-600 dark:text-brand-400" />
+            <Layers className="h-6 w-6 text-brand-700 dark:text-brand-400" />
           </div>
           <div>
             <h2 className="text-lg font-bold text-slate-900 dark:text-white">

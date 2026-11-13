@@ -123,10 +123,10 @@ export function Scanner({ onScan, onError, lastSequence, alreadyRead, voiceEnabl
       <button
         onClick={active ? handleStop : handleStart}
         disabled={starting}
-        className={`flex w-full items-center justify-center gap-3 rounded-xl px-6 py-3.5 text-base font-semibold text-white transition-colors active:scale-[0.98] disabled:opacity-50 ${
+        className={`flex w-full items-center justify-center gap-3 rounded-xl px-6 py-3.5 text-base font-bold transition-colors active:scale-[0.98] disabled:opacity-50 ${
           active
-            ? 'bg-red-500 hover:bg-red-600'
-            : 'bg-brand-600 hover:bg-brand-700'
+            ? 'bg-red-500 text-white hover:bg-red-600'
+            : 'bg-brand-500 text-slate-900 hover:bg-brand-400'
         }`}
       >
         {starting ? (
@@ -151,23 +151,23 @@ export function Scanner({ onScan, onError, lastSequence, alreadyRead, voiceEnabl
       <div
         className={`sticky top-[72px] z-30 rounded-2xl p-4 shadow-lg transition-colors ${
           alreadyRead
-            ? 'bg-gradient-to-br from-amber-500 to-amber-600'
-            : 'bg-gradient-to-br from-brand-600 to-brand-800'
+            ? 'bg-amber-400 text-slate-900'
+            : 'bg-slate-900 ring-1 ring-brand-500/50'
         }`}
       >
         <p
           className={`text-xs font-semibold uppercase tracking-wider ${
-            alreadyRead ? 'text-amber-50' : 'text-brand-100'
+            alreadyRead ? 'text-slate-900/80' : 'text-brand-400'
           }`}
         >
           Última sequência
         </p>
         <div className="mt-1 flex items-baseline gap-3">
-          <p className="text-4xl font-extrabold text-white tabular-nums">
+          <p className={`text-4xl font-extrabold tabular-nums ${alreadyRead ? 'text-slate-900' : 'text-white'}`}>
             {lastSequence ?? '—'}
           </p>
           {alreadyRead && (
-            <span className="rounded-lg bg-white/25 px-2.5 py-1 text-sm font-bold text-white">
+            <span className="rounded-lg bg-slate-900/15 px-2.5 py-1 text-sm font-bold text-slate-900">
               Já Lido
             </span>
           )}

@@ -103,7 +103,7 @@ export function FrotaScreen({ onBack, onError, onRegisterBackHandler }: FrotaScr
     if (loading) {
       return (
         <StatusPanel
-          icon={<Loader2 className="h-7 w-7 animate-spin text-brand-600 dark:text-brand-400" />}
+          icon={<Loader2 className="h-7 w-7 animate-spin text-brand-700 dark:text-brand-400" />}
           title="Otimizando a frota..."
           text="Estamos processando a sua planilha."
         />
@@ -118,9 +118,9 @@ export function FrotaScreen({ onBack, onError, onRegisterBackHandler }: FrotaScr
               <p className="text-lg font-bold text-slate-900 dark:text-white">{result.totalRows}</p>
               <p className="text-[10px] text-slate-500 dark:text-slate-400">Pedidos</p>
             </div>
-            <div className="rounded-xl bg-blue-50 p-2.5 text-center dark:bg-blue-900/30">
-              <p className="text-lg font-bold text-blue-600 dark:text-blue-400">{result.duplicatesRemoved}</p>
-              <p className="text-[10px] text-blue-600 dark:text-blue-400">Unificados</p>
+            <div className="rounded-xl bg-brand-50 p-2.5 text-center dark:bg-brand-900/30">
+              <p className="text-lg font-bold text-brand-700 dark:text-brand-400">{result.duplicatesRemoved}</p>
+              <p className="text-[10px] text-brand-700 dark:text-brand-400">Unificados</p>
             </div>
             <div className="rounded-xl bg-emerald-50 p-2.5 text-center dark:bg-emerald-900/30">
               <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400">{result.outputRows}</p>
@@ -150,7 +150,7 @@ export function FrotaScreen({ onBack, onError, onRegisterBackHandler }: FrotaScr
 
     return (
       <StatusPanel
-        icon={<Users className="h-7 w-7 text-brand-600 dark:text-brand-400" />}
+        icon={<Users className="h-7 w-7 text-brand-700 dark:text-brand-400" />}
         title="Vamos otimizar sua frota?"
         text="Selecione sua planilha da frota."
       >

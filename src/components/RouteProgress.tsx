@@ -39,7 +39,7 @@ export function RouteProgress({ current, viewed, failed, onSelect, labels = ROUT
                   filled
                     ? failed && active
                       ? 'bg-red-500'
-                      : 'bg-brand-600 dark:bg-brand-400'
+                      : 'bg-brand-500 dark:bg-brand-400'
                     : 'bg-slate-200 dark:bg-slate-700'
                 }`}
               />

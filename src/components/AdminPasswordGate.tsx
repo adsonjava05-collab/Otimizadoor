@@ -38,7 +38,7 @@ export function AdminPasswordGate({ onSuccess, onCancel }: AdminPasswordGateProp
         }`}
       >
         <div className="mb-6 flex flex-col items-center text-center">
-          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-600">
+          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-500">
             <Lock className="h-8 w-8 text-white" />
           </div>
           <h2 className="mt-4 text-lg font-bold text-slate-900 dark:text-white">
@@ -63,7 +63,7 @@ export function AdminPasswordGate({ onSuccess, onCancel }: AdminPasswordGateProp
             className={`w-full rounded-xl border px-4 py-3 text-center text-lg font-semibold tracking-widest text-slate-900 focus:outline-none dark:bg-slate-900 dark:text-white ${
               error
                 ? 'border-red-400 focus:border-red-500 dark:border-red-500'
-                : 'border-slate-200 focus:border-blue-500 dark:border-slate-700'
+                : 'border-slate-200 focus:border-brand-500 dark:border-slate-700'
             }`}
           />
 
@@ -84,7 +84,7 @@ export function AdminPasswordGate({ onSuccess, onCancel }: AdminPasswordGateProp
             </button>
             <button
               type="submit"
-              className="flex-1 rounded-xl bg-blue-600 py-3 text-sm font-bold text-white transition-colors hover:bg-blue-700 active:scale-[0.98]"
+              className="flex-1 rounded-xl bg-brand-500 py-3 text-sm font-bold text-slate-900 transition-colors hover:bg-brand-400 active:scale-[0.98]"
             >
               Entrar
             </button>

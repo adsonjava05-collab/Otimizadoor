@@ -20,7 +20,7 @@ export function AlertModal({ message, onClose }: AlertModalProps) {
 
         <button
           onClick={onClose}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-6 py-3.5 text-base font-bold text-white transition-colors hover:bg-brand-700 active:scale-[0.98]"
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-500 px-6 py-3.5 text-base font-bold text-slate-900 transition-colors hover:bg-brand-400 active:scale-[0.98]"
         >
           OK
         </button>

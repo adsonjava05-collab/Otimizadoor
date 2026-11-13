@@ -7,15 +7,15 @@ export function SimFrotaImport() {
   return (
     <div className="p-4">
       <div className="flex flex-col items-center py-3 text-center">
-        <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500 to-blue-700">
-          <Users className="h-6 w-6 text-white" />
+        <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500 to-accent-400">
+          <Users className="h-6 w-6 text-slate-900" />
         </div>
         <h4 className="text-sm font-bold text-slate-900 dark:text-white">Otimizar Frota</h4>
         <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
           Selecione a planilha XLSX da sua frota.
         </p>
         <div className="mt-3 w-full">
-          <div className="flex w-full items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-2.5 text-xs font-semibold text-white ring-2 ring-orange-300 ring-offset-2">
+          <div className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-500 px-4 py-2.5 text-xs font-semibold text-slate-900 ring-2 ring-brand-300 ring-offset-2">
             <FileSpreadsheet className="h-4 w-4" />
             Selecionar XLSX
           </div>
@@ -38,7 +38,7 @@ export function SimFrotaResult() {
         </div>
         <div className="relative">
           <RecommendedBadge />
-          <div className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-semibold text-white ring-2 ring-blue-300 ring-offset-2">
+          <div className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-500 px-4 py-2.5 text-xs font-semibold text-slate-900 ring-2 ring-brand-300 ring-offset-2">
             <ExternalLink className="h-4 w-4" />
             Abrir o Circuit
           </div>

@@ -38,7 +38,7 @@ export function TutorialModal({ onClose }: TutorialModalProps) {
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4 dark:border-slate-700">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-600">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-500">
               <PlayCircle className="h-5 w-5 text-white" />
             </div>
             <div>
@@ -81,7 +81,7 @@ export function TutorialModal({ onClose }: TutorialModalProps) {
                 href={tutorialUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-2 rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-brand-700"
+                className="flex items-center gap-2 rounded-xl bg-brand-500 px-5 py-2.5 text-sm font-bold text-slate-900 transition-colors hover:bg-brand-400"
               >
                 <ExternalLink className="h-4 w-4" />
                 Abrir no navegador
@@ -106,7 +106,7 @@ export function TutorialModal({ onClose }: TutorialModalProps) {
               type="checkbox"
               checked={dontShowAgain}
               onChange={(e) => setDontShowAgain(e.target.checked)}
-              className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500 dark:border-slate-600"
+              className="h-4 w-4 rounded border-slate-300 text-brand-700 focus:ring-brand-500 dark:border-slate-600"
             />
             <span className="text-sm text-slate-600 dark:text-slate-400">
               Não mostrar novamente
@@ -115,7 +115,7 @@ export function TutorialModal({ onClose }: TutorialModalProps) {
 
           <button
             onClick={handleClose}
-            className="rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-brand-700 active:scale-[0.98]"
+            className="rounded-xl bg-brand-500 px-5 py-2.5 text-sm font-bold text-slate-900 transition-colors hover:bg-brand-400 active:scale-[0.98]"
           >
             Entendido
           </button>

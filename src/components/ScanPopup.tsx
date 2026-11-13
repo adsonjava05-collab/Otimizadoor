@@ -129,7 +129,7 @@ export function ScanPopup({ group, checkedSpxTns, alreadyRead, lastReadSequence,
               <span className={`text-xs font-semibold uppercase tracking-wider ${
                 alreadyRead
                   ? 'text-amber-600 dark:text-amber-400'
-                  : 'text-brand-600 dark:text-brand-400'
+                  : 'text-brand-700 dark:text-brand-400'
               }`}>
                 Último lido
               </span>
@@ -148,7 +148,7 @@ export function ScanPopup({ group, checkedSpxTns, alreadyRead, lastReadSequence,
         <div className="h-2 w-full bg-slate-100 dark:bg-slate-700">
           <div
             className={`h-full transition-none ${
-              alreadyRead ? 'bg-amber-500' : 'bg-brand-600'
+              alreadyRead ? 'bg-amber-500' : 'bg-brand-500'
             }`}
             style={{ width: `${alreadyRead ? 100 : progress}%` }}
           />
@@ -161,7 +161,7 @@ export function ScanPopup({ group, checkedSpxTns, alreadyRead, lastReadSequence,
             className={`w-full rounded-2xl py-3.5 text-base font-bold text-white transition-colors active:scale-[0.98] ${
               alreadyRead
                 ? 'bg-amber-500 hover:bg-amber-600'
-                : 'bg-brand-600 hover:bg-brand-700'
+                : 'bg-brand-500 hover:bg-brand-400'
             }`}
           >
             Entendido

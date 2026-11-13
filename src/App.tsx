@@ -791,25 +791,21 @@ function App() {
         <ToastContainer toasts={toasts} onClose={removeToast} />
 
         {/* Header */}
-        <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/80 backdrop-blur dark:border-slate-800 dark:bg-slate-900/80">
+        <header className="sticky top-0 z-40 border-b border-brand-500/30 bg-slate-900/95 backdrop-blur">
           <div className="mx-auto flex max-w-2xl items-center justify-between px-4 py-3">
             <div className="flex items-center gap-2">
               <img
                 src="/icons/01-logo-web.png"
                 alt="Otimiza Flash"
-                className="h-9 w-auto dark:hidden"
+                className="h-9 w-auto"
               />
-              <div className="hidden items-center gap-2 dark:flex">
-                <img src="/icons/02-icone-apk-pwa.png" alt="" className="h-9 w-9 rounded-xl object-contain" />
-                <h1 className="text-base font-bold leading-tight">Otimiza Flash</h1>
-              </div>
             </div>
 
             <div className="flex items-center gap-2">
               {hasData && (
                 <button
                   onClick={handleGoHome}
-                  className="rounded-xl border border-slate-200 p-2.5 text-slate-600 transition-colors hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+                  className="rounded-xl border border-slate-700 p-2.5 text-slate-200 transition-colors hover:border-brand-500 hover:text-brand-400"
                   title="Voltar para inicio"
                 >
                   <Home className="h-5 w-5" />
@@ -817,7 +813,7 @@ function App() {
               )}
               <button
                 onClick={() => setDark((d) => !d)}
-                className="rounded-xl border border-slate-200 p-2.5 text-slate-600 transition-colors hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+                className="rounded-xl border border-slate-700 p-2.5 text-slate-200 transition-colors hover:border-brand-500 hover:text-brand-400"
               >
                 {dark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
               </button>
@@ -826,7 +822,7 @@ function App() {
               <div className="relative">
                 <button
                   onClick={() => setMenuOpen((m) => !m)}
-                  className="cursor-pointer rounded-xl border border-slate-200 p-2.5 text-slate-600 transition-colors hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+                  className="cursor-pointer rounded-xl border border-slate-700 p-2.5 text-slate-200 transition-colors hover:border-brand-500 hover:text-brand-400"
                 >
                   {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
                 </button>
@@ -856,7 +852,7 @@ function App() {
                         }}
                         className="flex w-full items-center gap-3 px-4 py-3.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700"
                       >
-                        <PlayCircle className="h-5 w-5 text-blue-500" />
+                        <PlayCircle className="h-5 w-5 text-brand-700" />
                         Tutoriais
                       </button>
                       <button
@@ -866,7 +862,7 @@ function App() {
                         }}
                         className="flex w-full items-center gap-3 px-4 py-3.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700"
                       >
-                        <Users className="h-5 w-5 text-purple-500" />
+                        <Users className="h-5 w-5 text-brand-700" />
                         Administração
                       </button>
                       <div className="flex w-full min-w-0 items-center justify-between gap-3 px-4 py-3.5">
@@ -905,7 +901,7 @@ function App() {
                         disabled={!apkCircuitUrl}
                         className="flex w-full items-center gap-3 px-4 py-3.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 disabled:opacity-50 dark:text-slate-200 dark:hover:bg-slate-700"
                       >
-                        <Download className="h-5 w-5 text-brand-600 dark:text-brand-400" />
+                        <Download className="h-5 w-5 text-brand-700 dark:text-brand-400" />
                         Download Circuit
                       </button>
                     </div>
@@ -1049,7 +1045,7 @@ function App() {
                     setShowCompletionModal(false);
                     handleGoHome();
                   }}
-                  className="flex-1 rounded-xl bg-brand-600 py-3 text-sm font-bold text-white transition-colors hover:bg-brand-700"
+                  className="flex-1 rounded-xl bg-brand-500 py-3 text-sm font-bold text-slate-900 transition-colors hover:bg-brand-400"
                 >
                   Sim
                 </button>

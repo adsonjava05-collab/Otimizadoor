@@ -43,7 +43,7 @@ export function DuplicateFileModal({
         <div className="flex gap-3">
           <button
             onClick={onResume}
-            className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-brand-600 py-3 text-sm font-semibold text-white transition-colors hover:bg-brand-700"
+            className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-brand-500 py-3 text-sm font-semibold text-slate-900 transition-colors hover:bg-brand-400"
           >
             <RotateCcw className="h-4 w-4" />
             Retomar

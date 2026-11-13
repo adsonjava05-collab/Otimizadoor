@@ -35,7 +35,7 @@ export function InfoModal({ onConfirm }: InfoModalProps) {
         <div className="border-t border-slate-100 px-6 py-4 dark:border-slate-700">
           <button
             onClick={onConfirm}
-            className="w-full rounded-xl bg-blue-600 py-3 text-sm font-bold text-white transition-colors hover:bg-blue-700"
+            className="w-full rounded-xl bg-brand-500 py-3 text-sm font-bold text-slate-900 transition-colors hover:bg-brand-400"
           >
             Entendi
           </button>

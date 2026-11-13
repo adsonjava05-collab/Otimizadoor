@@ -12,7 +12,7 @@ export function RouteMetrics({ total, saved, stops }: RouteMetricsProps) {
       icon: Package,
       label: 'Total de pedidos',
       value: total,
-      iconClass: 'text-brand-600 dark:text-brand-400',
+      iconClass: 'text-brand-700 dark:text-brand-400',
     },
     {
       icon: Link2,

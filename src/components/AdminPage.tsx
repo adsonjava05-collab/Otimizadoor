@@ -122,7 +122,7 @@ export function AdminPage({ onBack }: AdminPageProps) {
             <ArrowLeft className="h-5 w-5" />
           </button>
           <div className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-500">
               <Settings className="h-5 w-5 text-white" />
             </div>
             <h1 className="text-lg font-bold text-slate-900 dark:text-white">
@@ -137,7 +137,7 @@ export function AdminPage({ onBack }: AdminPageProps) {
               onClick={() => setActiveTab('settings')}
               className={`flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-medium transition-colors ${
                 activeTab === 'settings'
-                  ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400'
+                  ? 'border-brand-600 text-brand-700 dark:border-brand-400 dark:text-brand-400'
                   : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300'
               }`}
             >
@@ -148,7 +148,7 @@ export function AdminPage({ onBack }: AdminPageProps) {
               onClick={() => setActiveTab('announcements')}
               className={`flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-medium transition-colors ${
                 activeTab === 'announcements'
-                  ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400'
+                  ? 'border-brand-600 text-brand-700 dark:border-brand-400 dark:text-brand-400'
                   : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300'
               }`}
             >
@@ -164,7 +164,7 @@ export function AdminPage({ onBack }: AdminPageProps) {
               onClick={() => setActiveTab('maintenance')}
               className={`flex items-center gap-2 border-b-2 px-4 py-3 text-sm font-medium transition-colors ${
                 activeTab === 'maintenance'
-                  ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400'
+                  ? 'border-brand-600 text-brand-700 dark:border-brand-400 dark:text-brand-400'
                   : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300'
               }`}
             >
@@ -184,7 +184,7 @@ export function AdminPage({ onBack }: AdminPageProps) {
                 className="flex w-full items-center justify-between p-4 text-left"
               >
                 <div className="flex items-center gap-2">
-                  <PlayCircle className="h-5 w-5 text-blue-500" />
+                  <PlayCircle className="h-5 w-5 text-brand-700" />
                   <span className="text-sm font-bold text-slate-900 dark:text-white">
                     Tutoriais
                   </span>
@@ -298,7 +298,7 @@ export function AdminPage({ onBack }: AdminPageProps) {
                         }
                       }}
                       disabled={tutorialsSaving}
-                      className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-600 py-3 text-sm font-bold text-white transition-colors hover:bg-brand-700 disabled:opacity-50"
+                      className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-500 py-3 text-sm font-bold text-slate-900 transition-colors hover:bg-brand-400 disabled:opacity-50"
                     >
                       <Save className="h-5 w-5" />
                       {tutorialsSaving ? 'Salvando...' : tutorialsSaved ? 'Salvo!' : 'Salvar'}
@@ -336,7 +336,7 @@ export function AdminPage({ onBack }: AdminPageProps) {
                     setTimeout(() => setApkSaved(false), 2000);
                   }}
                   disabled={apkSaving}
-                  className="flex items-center gap-2 rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-brand-700 disabled:opacity-50"
+                  className="flex items-center gap-2 rounded-xl bg-brand-500 px-4 py-2.5 text-sm font-medium text-slate-900 transition-colors hover:bg-brand-400 disabled:opacity-50"
                 >
                   <Save className="h-4 w-4" />
                   {apkSaving ? 'Salvando...' : apkSaved ? 'Salvo!' : 'Salvar'}
@@ -384,7 +384,7 @@ export function AdminPage({ onBack }: AdminPageProps) {
                     });
                     setShowAnnouncementEditor(true);
                   }}
-                  className="flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+                  className="flex items-center gap-2 rounded-xl bg-brand-500 px-4 py-2 text-sm font-medium text-slate-900 transition-colors hover:bg-brand-400"
                 >
                   <Megaphone className="h-4 w-4" />
                   Novo Comunicado
@@ -435,7 +435,7 @@ export function AdminPage({ onBack }: AdminPageProps) {
                         </p>
                         <div className="mt-2 flex flex-wrap items-center gap-2 text-[10px] text-slate-400">
                           {announcement.showOncePerUser && (
-                            <span className="rounded bg-blue-100 px-1.5 py-0.5 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
+                            <span className="rounded bg-brand-100 px-1.5 py-0.5 text-brand-800 dark:bg-brand-900/40 dark:text-brand-300">
                               Uma vez por usuário
                             </span>
                           )}
@@ -530,7 +530,7 @@ export function AdminPage({ onBack }: AdminPageProps) {
                         onChange={(e) =>
                           setAnnouncementForm({ ...announcementForm, title: e.target.value })
                         }
-                        className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-slate-900 focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                        className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-slate-900 focus:border-brand-500 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
                         placeholder="Título do comunicado"
                       />
                     </div>
@@ -545,7 +545,7 @@ export function AdminPage({ onBack }: AdminPageProps) {
                           setAnnouncementForm({ ...announcementForm, message: e.target.value })
                         }
                         rows={4}
-                        className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-slate-900 focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                        className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-slate-900 focus:border-brand-500 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
                         placeholder="Conteúdo do comunicado..."
                       />
                     </div>
@@ -562,7 +562,7 @@ export function AdminPage({ onBack }: AdminPageProps) {
                             displayLocation: e.target.value as DisplayLocation,
                           })
                         }
-                        className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-slate-900 focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                        className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-slate-900 focus:border-brand-500 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
                       >
                         <option value="after_login">Ao abrir o sistema</option>
                         <option value="login">Tela inicial</option>
@@ -586,7 +586,7 @@ export function AdminPage({ onBack }: AdminPageProps) {
                           }
                           className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
                             announcementForm.showOncePerUser
-                              ? 'bg-blue-600'
+                              ? 'bg-brand-500'
                               : 'bg-slate-300 dark:bg-slate-600'
                           }`}
                         >
@@ -614,7 +614,7 @@ export function AdminPage({ onBack }: AdminPageProps) {
                           }
                           className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
                             announcementForm.requireConfirmation
-                              ? 'bg-blue-600'
+                              ? 'bg-brand-500'
                               : 'bg-slate-300 dark:bg-slate-600'
                           }`}
                         >
@@ -638,7 +638,7 @@ export function AdminPage({ onBack }: AdminPageProps) {
                           onChange={(e) =>
                             setAnnouncementForm({ ...announcementForm, startDate: e.target.value })
                           }
-                          className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-slate-900 focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                          className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-slate-900 focus:border-brand-500 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
                         />
                       </div>
                       <div>
@@ -651,7 +651,7 @@ export function AdminPage({ onBack }: AdminPageProps) {
                           onChange={(e) =>
                             setAnnouncementForm({ ...announcementForm, endDate: e.target.value })
                           }
-                          className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-slate-900 focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                          className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-slate-900 focus:border-brand-500 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-white"
                         />
                       </div>
                     </div>
@@ -704,7 +704,7 @@ export function AdminPage({ onBack }: AdminPageProps) {
                             : 'Comunicado criado com sucesso!'
                         );
                       }}
-                      className="flex-1 rounded-xl bg-blue-600 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+                      className="flex-1 rounded-xl bg-brand-500 py-2.5 text-sm font-medium text-slate-900 transition-colors hover:bg-brand-400"
                     >
                       {editingAnnouncement ? 'Salvar' : 'Criar'}
                     </button>
