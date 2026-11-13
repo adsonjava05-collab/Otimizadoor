@@ -12,8 +12,8 @@ export default defineConfig({
       filename: 'sw.ts',
       includeAssets: ['icons/icon-*.png'],
       manifest: {
-        name: 'Rota 123',
-        short_name: 'Rota 123',
+        name: 'Otimiza Flash',
+        short_name: 'Otimiza Flash',
         description: 'Organize seus pedidos, otimize suas rotas e faca mais entregas em menos tempo.',
         theme_color: '#0f172a',
         background_color: '#0f172a',

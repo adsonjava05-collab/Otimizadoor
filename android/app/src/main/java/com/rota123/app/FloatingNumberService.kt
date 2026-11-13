@@ -373,7 +373,7 @@ class FloatingNumberService : Service() {
                 ) as ClipboardManager
 
             val clip = ClipData.newPlainText(
-                "Número Rota 123",
+                "Número Otimiza Flash",
                 text
             )
 

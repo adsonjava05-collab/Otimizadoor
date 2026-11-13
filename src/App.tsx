@@ -795,12 +795,13 @@ function App() {
           <div className="mx-auto flex max-w-2xl items-center justify-between px-4 py-3">
             <div className="flex items-center gap-2">
               <img
-                src="/icons/icon-192x192.png"
-                alt="Otimizador De Rota"
-                className="h-9 w-9 rounded-xl object-contain"
+                src="/icons/01-logo-web.png"
+                alt="Otimiza Flash"
+                className="h-9 w-auto dark:hidden"
               />
-              <div>
-                <h1 className="text-base font-bold leading-tight">Otimizador De Rota</h1>
+              <div className="hidden items-center gap-2 dark:flex">
+                <img src="/icons/02-icone-apk-pwa.png" alt="" className="h-9 w-9 rounded-xl object-contain" />
+                <h1 className="text-base font-bold leading-tight">Otimiza Flash</h1>
               </div>
             </div>
 

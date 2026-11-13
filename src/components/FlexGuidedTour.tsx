@@ -15,7 +15,7 @@ interface FlexGuidedTourProps {
 
 const STEPS: TourStep[] = [
   {
-    title: 'Bem-vindo ao Rota 123!',
+    title: 'Bem-vindo ao Otimiza Flash!',
     description:
       'Vamos conhecer como preparar, otimizar e organizar suas rotas de entrega. Acompanhe o passo a passo.',
   },
@@ -28,7 +28,7 @@ const STEPS: TourStep[] = [
   {
     title: 'Selecionar XLSX',
     description:
-      'Selecione a planilha XLSX baixada do aplicativo SPX. O Rota 123 processará os dados automaticamente.',
+      'Selecione a planilha XLSX baixada do aplicativo SPX. O Otimiza Flash processará os dados automaticamente.',
     content: <SimSelectXlsx />,
   },
   {
@@ -40,7 +40,7 @@ const STEPS: TourStep[] = [
   {
     title: 'Arquivo da Rota',
     description:
-      'Após processar a planilha, o Rota 123 gera o arquivo da rota. Recomendamos abrir o Circuit para enviar automaticamente seu arquivo e organizar e otimizar sua rota. Use "Baixar arquivo" para salvar uma cópia no celular, ou "Continuar" se já tiver o PDF da rota.',
+      'Após processar a planilha, o Otimiza Flash gera o arquivo da rota. Recomendamos abrir o Circuit para enviar automaticamente seu arquivo e organizar e otimizar sua rota. Use "Baixar arquivo" para salvar uma cópia no celular, ou "Continuar" se já tiver o PDF da rota.',
     content: <SimArquivoSpx />,
   },
   {
@@ -57,28 +57,28 @@ const STEPS: TourStep[] = [
     ),
   },
   {
-    title: 'Selecionando a impressora Rota 123',
+    title: 'Selecionando a impressora Otimiza Flash',
     description:
-      'Por padrão, aparece "Salvar como PDF". Toque nessa opção, selecione "Rota 123 — Importar PDF" e depois toque no botão de impressão para enviar sua rota.',
+      'Por padrão, aparece "Salvar como PDF". Toque nessa opção, selecione "Otimiza Flash — Importar PDF" e depois toque no botão de impressão para enviar sua rota.',
     hideDescription: true,
     content: (
       <TutorialScreenshot
         large
         src="/tutorial/impressora.png"
-        alt="Tela de impressão com a opção Rota 123 — Importar PDF selecionada"
+        alt="Tela de impressão com a opção Otimiza Flash — Importar PDF selecionada"
       />
     ),
   },
   {
     title: 'Rota recebida! Agora é só bipar.',
     description:
-      'Após enviar a rota pela impressora virtual, você receberá uma notificação do Rota 123. Toque nela para abrir automaticamente a tela de bipagem da sua rota.',
+      'Após enviar a rota pela impressora virtual, você receberá uma notificação do Otimiza Flash. Toque nela para abrir automaticamente a tela de bipagem da sua rota.',
     hideDescription: true,
     content: (
       <TutorialScreenshot
         large
         src="/tutorial/rota-recebida.png"
-        alt="Notificação do Rota 123 informando que a rota foi recebida"
+        alt="Notificação do Otimiza Flash informando que a rota foi recebida"
       />
     ),
   },
@@ -91,7 +91,7 @@ const STEPS: TourStep[] = [
   {
     title: 'Finalização',
     description:
-      'Pronto! Agora você já conhece o processo de preparação de rotas no Rota 123. Bom trabalho!',
+      'Pronto! Agora você já conhece o processo de preparação de rotas no Otimiza Flash. Bom trabalho!',
     content: <SimFinalizacao />,
   },
 ];

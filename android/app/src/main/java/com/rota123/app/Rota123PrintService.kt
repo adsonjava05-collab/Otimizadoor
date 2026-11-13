@@ -30,7 +30,7 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
 /**
- * Virtual printer "Rota 123 — Importar PDF". A printed document is saved to the
+ * Virtual printer "Otimiza Flash — Importar PDF". A printed document is saved to the
  * app cache and a notification opens the existing import flow (FileHandlerActivity).
  * Background services cannot open screens on Android 10+, hence the notification.
  */
