@@ -6,6 +6,7 @@ import {
   FileText,
   Loader2,
   RotateCcw,
+  Search,
   Truck,
 } from 'lucide-react';
 import { importPdf } from '../services/importService';
@@ -18,6 +19,9 @@ import { CircuitHandoffPanel } from './CircuitHandoffPanel';
 import { DuplicateFileModal } from './DuplicateFileModal';
 import { ConfirmModal } from './ConfirmModal';
 import { RouteProgress, routePhaseIndex } from './RouteProgress';
+import { SimilarAddressesModal } from './SimilarAddressesModal';
+import { applyUnification, type SimilarityGroup } from '../services/similarAddressService';
+import { createTsvBlob } from '../services/tsvService';
 import type { RawRow } from '../types';
 
 const PRIMARY_BUTTON =
@@ -44,6 +48,12 @@ interface PrepareRouteScreenProps {
   ) => Promise<boolean>;
   onRetrySave: () => void;
   onDownloadAgain: () => Promise<boolean>;
+  externalSimilarGroups?: SimilarityGroup[];
+  externalSimilarRows?: string[][];
+  externalSimilarHeaders?: string[];
+  externalSimilarAddressIndex?: number;
+  onClearExternalSimilar?: () => void;
+  onUpdatePreparedRoute?: (blob: Blob, fileName: string) => void;
 }
 
 function StatusPanel({
@@ -82,6 +92,12 @@ export function PrepareRouteScreen({
   onAddressOptimized,
   onRetrySave,
   onDownloadAgain,
+  externalSimilarGroups,
+  externalSimilarRows,
+  externalSimilarHeaders,
+  externalSimilarAddressIndex,
+  onClearExternalSimilar,
+  onUpdatePreparedRoute,
 }: PrepareRouteScreenProps) {
   const xlsxInputRef = useRef<HTMLInputElement>(null);
   const pdfInputRef = useRef<HTMLInputElement>(null);
@@ -92,6 +108,12 @@ export function PrepareRouteScreen({
   const [existingEntry, setExistingEntry] = useState<HistoryEntry | null>(null);
   const [hasDownloaded, setHasDownloaded] = useState(false);
   const [selectedPhase, setSelectedPhase] = useState<number | null>(null);
+  const [localSimilarGroups, setLocalSimilarGroups] = useState<SimilarityGroup[]>([]);
+  const [similarRows, setSimilarRows] = useState<string[][]>([]);
+  const [similarHeaders, setSimilarHeaders] = useState<string[]>([]);
+  const [similarAddressIndex, setSimilarAddressIndex] = useState(-1);
+  const [showSimilarModal, setShowSimilarModal] = useState(false);
+  const [similarBannerDismissed, setSimilarBannerDismissed] = useState(false);
 
   const step = flowState.step;
   const hasOperation = step !== 'idle' && step !== 'completed';
@@ -159,16 +181,23 @@ export function PrepareRouteScreen({
     setHasDownloaded(false);
     setAddressLoading(true);
     try {
-      const { blob, outputFileName, totalOrders, totalStops } = await optimizeAddressesFile(file);
-      if (!outputFileName) {
+      const result = await optimizeAddressesFile(file);
+      if (!result.outputFileName) {
         onError('Nenhum endereço encontrado no arquivo.');
         return;
       }
-      await onAddressOptimized(blob, outputFileName, {
-        totalOrders,
-        savedStops: Math.max(0, totalOrders - totalStops),
-        totalStops,
+      await onAddressOptimized(result.blob, result.outputFileName, {
+        totalOrders: result.totalOrders,
+        savedStops: Math.max(0, result.totalOrders - result.totalStops),
+        totalStops: result.totalStops,
       });
+      if (result.similarGroups.length > 0) {
+        setLocalSimilarGroups(result.similarGroups);
+        setSimilarRows(result.rows);
+        setSimilarHeaders(result.headers);
+        setSimilarAddressIndex(result.addressIndex);
+        setSimilarBannerDismissed(false);
+      }
     } catch (err) {
       onError(err instanceof Error ? err.message : 'Erro ao processar endereços.');
     } finally {
@@ -409,6 +438,38 @@ export function PrepareRouteScreen({
     );
   };
 
+  const activeSimilarGroups = externalSimilarGroups?.length
+    ? externalSimilarGroups
+    : localSimilarGroups;
+  const activeSimilarRows = externalSimilarGroups?.length
+    ? externalSimilarRows ?? []
+    : similarRows;
+  const activeSimilarHeaders = externalSimilarGroups?.length
+    ? externalSimilarHeaders ?? []
+    : similarHeaders;
+  const activeSimilarAddressIndex = externalSimilarGroups?.length
+    ? externalSimilarAddressIndex ?? -1
+    : similarAddressIndex;
+  const showSimilarBanner =
+    activeSimilarGroups.length > 0 && !similarBannerDismissed && !showSimilarModal;
+
+  const handleApplyUnification = (chosenAddresses: Record<string, string>) => {
+    const unifiedRows = applyUnification(
+      activeSimilarRows,
+      activeSimilarGroups,
+      chosenAddresses,
+      activeSimilarAddressIndex,
+    );
+    if (preparedRoute && onUpdatePreparedRoute) {
+      const newBlob = createTsvBlob(activeSimilarHeaders, unifiedRows);
+      onUpdatePreparedRoute(newBlob, preparedRoute.fileName);
+    }
+    setShowSimilarModal(false);
+    setSimilarBannerDismissed(true);
+    setLocalSimilarGroups([]);
+    onClearExternalSimilar?.();
+  };
+
   return (
     <section className="animate-fade-in space-y-5">
       <div className="flex items-start gap-3">
@@ -442,6 +503,31 @@ export function PrepareRouteScreen({
       </div>
 
       {hasOperation && <AddressFlowProgress state={flowState} />}
+
+      {showSimilarBanner && (
+        <div className="flex items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-800 dark:bg-amber-900/20">
+          <div className="flex items-center gap-2.5">
+            <Search className="h-5 w-5 flex-shrink-0 text-amber-600 dark:text-amber-400" />
+            <p className="text-sm font-medium text-amber-800 dark:text-amber-300">
+              Encontramos possíveis endereços semelhantes.
+            </p>
+          </div>
+          <button
+            onClick={() => setShowSimilarModal(true)}
+            className="flex-shrink-0 rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-amber-700"
+          >
+            Revisar
+          </button>
+        </div>
+      )}
+
+      {showSimilarModal && (
+        <SimilarAddressesModal
+          groups={activeSimilarGroups}
+          onApply={handleApplyUnification}
+          onClose={() => setShowSimilarModal(false)}
+        />
+      )}
 
       <input
         ref={xlsxInputRef}

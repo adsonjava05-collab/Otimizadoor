@@ -5,6 +5,7 @@ import {
 } from './xlsxReaderService';
 import { createTsvBlob } from './tsvService';
 import { groupDeliveriesWithOptions } from './groupingService';
+import { findSimilarAddresses, type SimilarityGroup } from './similarAddressService';
 import type { RawRow } from '../types';
 
 export interface AddressOptimizeResult {
@@ -13,6 +14,10 @@ export interface AddressOptimizeResult {
   blob: Blob;
   totalOrders: number;
   totalStops: number;
+  similarGroups: SimilarityGroup[];
+  headers: string[];
+  rows: string[][];
+  addressIndex: number;
 }
 
 export async function optimizeAddressesFile(file: File): Promise<AddressOptimizeResult> {
@@ -26,7 +31,17 @@ export async function optimizeAddressesFile(file: File): Promise<AddressOptimize
 
   if (rows.length === 0) {
     console.warn('[ADDRESS OPTIMIZER] No rows found, returning empty');
-    return { processedCount: 0, outputFileName: '', blob: new Blob(), totalOrders: 0, totalStops: 0 };
+    return {
+      processedCount: 0,
+      outputFileName: '',
+      blob: new Blob(),
+      totalOrders: 0,
+      totalStops: 0,
+      similarGroups: [],
+      headers,
+      rows: [],
+      addressIndex: -1,
+    };
   }
 
   const indices = findColumnIndices(headers);
@@ -66,6 +81,13 @@ export async function optimizeAddressesFile(file: File): Promise<AddressOptimize
     return row;
   });
 
+  const similarGroups = findSimilarAddresses(
+    optimizedRows,
+    indices.destinationAddress,
+    indices.spxTn,
+    indices.sequence,
+  );
+
   const now = new Date();
   const day = String(now.getDate()).padStart(2, '0');
   const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -73,8 +95,6 @@ export async function optimizeAddressesFile(file: File): Promise<AddressOptimize
 
   const blob = createTsvBlob(headers, optimizedRows);
 
-  // Same equivalence criteria as the Flex scanner (groupingService), applied
-  // to the optimized rows for statistics only — no order is removed or merged.
   const statsRows: RawRow[] = optimizedRows.map((row, i) => ({
     colA: '',
     sequence: indices.sequence >= 0 ? row[indices.sequence] : '',
@@ -97,9 +117,20 @@ export async function optimizeAddressesFile(file: File): Promise<AddressOptimize
     processedCount,
     alreadyCorrectCount,
     unchangedCount,
+    similarGroups: similarGroups.length,
     outputFileName,
     processingTimeMs: elapsed.toFixed(2),
   });
 
-  return { processedCount, outputFileName, blob, totalOrders: rows.length, totalStops };
+  return {
+    processedCount,
+    outputFileName,
+    blob,
+    totalOrders: rows.length,
+    totalStops,
+    similarGroups,
+    headers,
+    rows: optimizedRows,
+    addressIndex: indices.destinationAddress,
+  };
 }
