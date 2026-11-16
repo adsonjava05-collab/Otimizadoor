@@ -24,6 +24,7 @@ import { Dashboard } from './components/Dashboard';
 import { Scanner } from './components/Scanner';
 import { SearchComponent } from './components/Search';
 import { DeliveryList } from './components/DeliveryList';
+import type { ScanFilter } from './types';
 import { ExportModal } from './components/Export';
 import { ToastContainer, type ToastData, type ToastType } from './components/Toast';
 import { HistoryModal } from './components/HistoryModal';
@@ -107,6 +108,7 @@ function App() {
     lastReadSequence: string;
   } | null>(null);
   const [historyEntries, setHistoryEntries] = useState<HistoryEntry[]>([]);
+  const [scanFilter, setScanFilter] = useState<ScanFilter>('all');
   const [currentHistoryId, setCurrentHistoryId] = useState<string | null>(null);
   const [pendingImport, setPendingImport] = useState<{
     rows: RawRow[];
@@ -641,7 +643,7 @@ function App() {
       if (result.status === 'not_found') {
         playError();
         addToast('error', 'Pedido não encontrado.');
-        return;
+        return false;
       }
 
       if (result.status === 'already_checked') {
@@ -655,7 +657,7 @@ function App() {
           lastReadSequence: result.individualSequence,
         });
         if (voiceEnabledRef.current) speakSequence(result.individualSequence, result.group.spxTns.length > 1);
-        return;
+        return false;
       }
 
       playSuccess();
@@ -712,6 +714,7 @@ function App() {
           setCompletionSummary({ totalOrders: totalCount, durationMs });
         }, 4000);
       }
+      return true;
     },
     [addToast, updateFlow]
   );
@@ -961,16 +964,23 @@ function App() {
                 onToggleVoice={handleToggleVoice}
               />
 
-              <Dashboard total={total} stops={groups.length} checked={checked} />
+              <Dashboard
+                total={total}
+                stops={groups.length}
+                checked={checked}
+                activeFilter={scanFilter}
+                onFilterChange={setScanFilter}
+              />
 
               <SearchComponent
                 rows={rows}
                 groups={groups}
                 checkState={checkState.checked}
                 onScan={handleScan}
+                filter={scanFilter}
               />
 
-              <DeliveryList groups={groups} checkState={checkState} />
+              <DeliveryList groups={groups} checkState={checkState} filter={scanFilter} />
             </div>
           )}
         </main>

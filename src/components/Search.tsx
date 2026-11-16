@@ -1,27 +1,26 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Search as SearchIcon, X, ScanLine, CheckCircle2 } from 'lucide-react';
-import type { RawRow, DeliveryGroup, SearchResult } from '../types';
+import type { RawRow, DeliveryGroup, ScanFilter } from '../types';
 import { search as searchFn } from '../services/searchService';
+import { matchesScanFilter } from '../services/checkService';
 
 interface SearchProps {
   rows: RawRow[];
   groups: DeliveryGroup[];
   checkState: Record<string, boolean>;
-  onScan: (spxTn: string) => void;
+  filter: ScanFilter;
+  onScan: (spxTn: string) => boolean;
 }
 
-export function SearchComponent({ rows, groups, checkState, onScan }: SearchProps) {
+export function SearchComponent({ rows, groups, checkState, filter, onScan }: SearchProps) {
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState<SearchResult[]>([]);
-
-  const handleSearch = (q: string) => {
-    setQuery(q);
-    if (!q.trim()) {
-      setResults([]);
-      return;
-    }
-    setResults(searchFn(q, rows, groups));
-  };
+  const results = useMemo(
+    () => (query.trim() ? searchFn(query, rows, groups) : []),
+    [query, rows, groups],
+  );
+  const visibleResults = results.filter((r) =>
+    matchesScanFilter(r.row.spxTn, filter, checkState),
+  );
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
@@ -30,13 +29,13 @@ export function SearchComponent({ rows, groups, checkState, onScan }: SearchProp
         <input
           type="text"
           value={query}
-          onChange={(e) => handleSearch(e.target.value)}
+          onChange={(e) => setQuery(e.target.value)}
           placeholder="Buscar por SPX TN ou endereço..."
           className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-11 pr-10 text-sm text-slate-900 outline-none transition-colors focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
         />
         {query && (
           <button
-            onClick={() => handleSearch('')}
+            onClick={() => setQuery('')}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
           >
             <X className="h-5 w-5" />
@@ -44,9 +43,9 @@ export function SearchComponent({ rows, groups, checkState, onScan }: SearchProp
         )}
       </div>
 
-      {results.length > 0 && (
+      {visibleResults.length > 0 && (
         <div className="mt-3 max-h-80 space-y-2 overflow-y-auto scrollbar-thin">
-          {results.map((r, i) => {
+          {visibleResults.map((r, i) => {
             const isChecked = r.row.spxTn ? checkState[r.row.spxTn] : false;
             return (
               <div
@@ -75,7 +74,9 @@ export function SearchComponent({ rows, groups, checkState, onScan }: SearchProp
                 </p>
                 {!isChecked && (
                   <button
-                    onClick={() => onScan(r.row.spxTn)}
+                    onClick={() => {
+                      if (onScan(r.row.spxTn)) setQuery('');
+                    }}
                     className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg bg-brand-500 py-2 text-sm font-semibold text-slate-900 transition-colors hover:bg-brand-400 active:scale-[0.98]"
                   >
                     <ScanLine className="h-4 w-4" />
@@ -88,7 +89,7 @@ export function SearchComponent({ rows, groups, checkState, onScan }: SearchProp
         </div>
       )}
 
-      {query && results.length === 0 && (
+      {query && visibleResults.length === 0 && (
         <p className="mt-3 text-center text-sm text-slate-400">
           Nenhum resultado encontrado.
         </p>

@@ -74,6 +74,8 @@ export interface CheckState {
   spxToGroup: Record<string, number>;
 }
 
+export type ScanFilter = 'all' | 'checked' | 'missing';
+
 export interface SearchResult {
   row: RawRow;
   group?: DeliveryGroup;

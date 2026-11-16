@@ -1,4 +1,4 @@
-import type { DeliveryGroup, CheckState, RawRow } from '../types';
+import type { DeliveryGroup, CheckState, RawRow, ScanFilter } from '../types';
 
 function buildIndividualSequence(
   group: DeliveryGroup,
@@ -28,6 +28,15 @@ export function createCheckState(groups: DeliveryGroup[]): CheckState {
   });
 
   return { checked, spxToGroup };
+}
+
+export function matchesScanFilter(
+  spxTn: string,
+  filter: ScanFilter,
+  checked: Record<string, boolean>,
+): boolean {
+  if (filter === 'all') return true;
+  return filter === 'checked' ? !!checked[spxTn] : !checked[spxTn];
 }
 
 export type CheckResult =

@@ -1,12 +1,18 @@
 import { CheckCircle2, Circle, MapPin } from 'lucide-react';
-import type { DeliveryGroup, CheckState } from '../types';
+import type { DeliveryGroup, CheckState, ScanFilter } from '../types';
+import { matchesScanFilter } from '../services/checkService';
 
 interface DeliveryListProps {
   groups: DeliveryGroup[];
   checkState: CheckState;
+  filter: ScanFilter;
 }
 
-export function DeliveryList({ groups, checkState }: DeliveryListProps) {
+export function DeliveryList({ groups, checkState, filter }: DeliveryListProps) {
+  const hasVisible = groups.some((group) =>
+    group.spxTns.some((spx) => matchesScanFilter(spx, filter, checkState.checked)),
+  );
+
   return (
     <div className="rounded-2xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800">
       <div className="border-b border-slate-200 px-4 py-3 dark:border-slate-700">
@@ -20,7 +26,16 @@ export function DeliveryList({ groups, checkState }: DeliveryListProps) {
             Nenhuma entrega carregada.
           </p>
         )}
+        {filter !== 'all' && !hasVisible && (
+          <p className="px-4 py-8 text-center text-sm text-slate-400">
+            Nenhum pedido neste filtro.
+          </p>
+        )}
         {groups.map((group, i) => {
+          const visibleSpx = group.spxTns.filter((spx) =>
+            matchesScanFilter(spx, filter, checkState.checked),
+          );
+          if (visibleSpx.length === 0) return null;
           const allChecked = group.spxTns.every(
             (spx) => checkState.checked[spx],
           );
@@ -49,7 +64,7 @@ export function DeliveryList({ groups, checkState }: DeliveryListProps) {
                   <span className="truncate">{group.officialAddress}</span>
                 </div>
                 <div className="mt-1 flex flex-wrap gap-1">
-                  {group.spxTns.map((spx) => {
+                  {visibleSpx.map((spx) => {
                     const checked = checkState.checked[spx];
                     return (
                       <span
