@@ -17,8 +17,13 @@ export function HistoryModal({ entries, onClose, onRefresh, onResume }: HistoryM
   const [expandedDate, setExpandedDate] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
+  const [tab, setTab] = useState<'flex' | 'frota'>('flex');
+  const visibleEntries = entries.filter((e) =>
+    tab === 'frota' ? e.importType === 'frota' : e.importType !== 'frota'
+  );
+
   // Agrupar por data
-  const byDate = entries.reduce<Record<string, HistoryEntry[]>>((acc, e) => {
+  const byDate = visibleEntries.reduce<Record<string, HistoryEntry[]>>((acc, e) => {
     (acc[e.date] ??= []).push(e);
     return acc;
   }, {});
@@ -56,6 +61,26 @@ export function HistoryModal({ entries, onClose, onRefresh, onResume }: HistoryM
           >
             <X className="h-5 w-5" />
           </button>
+        </div>
+
+        {/* Abas */}
+        <div className="flex gap-4 border-b border-slate-200 px-5 dark:border-slate-700">
+          {(['flex', 'frota'] as const).map((t) => (
+            <button
+              key={t}
+              onClick={() => {
+                setTab(t);
+                setExpandedDate(null);
+              }}
+              className={`-mb-px border-b-2 px-1 pb-3 pt-1 text-sm font-semibold transition-colors ${
+                tab === t
+                  ? 'border-brand-500 text-slate-900 dark:text-white'
+                  : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
+              }`}
+            >
+              {t === 'flex' ? 'Flex' : 'Frota'}
+            </button>
+          ))}
         </div>
 
         {/* Lista */}

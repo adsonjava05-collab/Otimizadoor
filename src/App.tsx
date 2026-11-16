@@ -398,11 +398,10 @@ function App() {
 
       try {
         const entry = await addImportEntry(importedRows, sequenced, hdrs, fileName, state);
-        if (entry) {
-          setCurrentHistoryId(entry.id);
-          setActiveFileName(fileName);
-          await saveActiveSession(entry.id, fileName, importedRows, sequenced, hdrs, state);
-        }
+        if (!entry) throw new Error('Falha ao salvar historico');
+        setCurrentHistoryId(entry.id);
+        setActiveFileName(fileName);
+        await saveActiveSession(entry.id, fileName, importedRows, sequenced, hdrs, state);
         await refreshHistory();
         const msg = groupingEnabled
           ? `${importedRows.length} pedidos importados e agrupados.`
