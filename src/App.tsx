@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Moon, Sun, ArrowUp, Menu, X, History, Users, PlayCircle, Home, Download, Hash } from 'lucide-react';
+import { Moon, Sun, ArrowUp, Menu, X, History, Users, PlayCircle, Home, Download, Hash, MapPin } from 'lucide-react';
 import type { RawRow, DeliveryGroup, CheckState } from './types';
 import {
   groupDeliveriesWithOptions,
@@ -73,6 +73,7 @@ import { saveBlobToDevice } from './services/nativeDownload';
 import { isFloatingNumberSupported, getFloatingNumberActive, hasFloatingNumberPermission, requestStartFloatingNumber, requestStopFloatingNumber, openFloatingNumberAppSettings, onFloatingNumberStateChange } from './services/floatingNumberService';
 import { clearStoredRoute, loadStoredRoute, saveStoredRoute } from './services/routeFileStore';
 import { FrotaGuidedTour } from './components/FrotaGuidedTour';
+import { LocationsScreen } from './components/LocationsScreen';
 
 declare global {
   interface Window {
@@ -128,6 +129,7 @@ function App() {
   const [activeAnnouncement, setActiveAnnouncement] = useState<GlobalAnnouncement | null>(null);
 
   const [showTutorialsPage, setShowTutorialsPage] = useState(false);
+  const [showLocationsPage, setShowLocationsPage] = useState(false);
   const [showFlexTour, setShowFlexTour] = useState(false);
   const [showFrotaTour, setShowFrotaTour] = useState(false);
   const [floatingNumberOn, setFloatingNumberOn] = useState(() => isFloatingNumberSupported() && getFloatingNumberActive());
@@ -323,6 +325,10 @@ function App() {
       setShowTutorialsPage(false);
       return true;
     }
+    if (showLocationsPage) {
+      setShowLocationsPage(false);
+      return true;
+    }
     if (menuOpen) {
       setMenuOpen(false);
       return true;
@@ -338,7 +344,7 @@ function App() {
       return true;
     }
     return false;
-  }, [menuOpen, pendingImport, popupData, showAdmin, showAdminGate, showExport, showFlexTour, showFrota, showFrotaTour, showHistory, showPrepareRoute, showTutorialsPage]);
+  }, [menuOpen, pendingImport, popupData, showAdmin, showAdminGate, showExport, showFlexTour, showFrota, showFrotaTour, showHistory, showLocationsPage, showPrepareRoute, showTutorialsPage]);
 
   useEffect(() => {
     window.__rota123HandleBack = handleAndroidBack;
@@ -796,6 +802,16 @@ function App() {
     );
   }
 
+  if (showLocationsPage) {
+    return (
+      <div className={dark ? 'dark' : ''}>
+        <LocationsScreen
+          onBack={() => setShowLocationsPage(false)}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className={dark ? 'dark' : ''}>
       <div className="min-h-screen bg-slate-100 text-slate-900 dark:bg-slate-900 dark:text-slate-100">
@@ -875,6 +891,16 @@ function App() {
                       >
                         <Users className="h-5 w-5 text-brand-700" />
                         Administração
+                      </button>
+                      <button
+                        onClick={() => {
+                          setShowLocationsPage(true);
+                          setMenuOpen(false);
+                        }}
+                        className="flex w-full items-center gap-3 px-4 py-3.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-700"
+                      >
+                        <MapPin className="h-5 w-5 text-brand-700" />
+                        Localização
                       </button>
                       <div className="flex w-full min-w-0 items-center justify-between gap-3 px-4 py-3.5">
                         <span className="flex min-w-0 items-center gap-3 text-sm font-medium text-slate-700 dark:text-slate-200">
