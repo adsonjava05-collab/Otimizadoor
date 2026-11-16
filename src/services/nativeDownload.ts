@@ -8,6 +8,7 @@ type AndroidBridge = {
   openTempTsv?: (base64: string, fileName: string) => boolean;
   isFloatingNumberActive?: () => boolean;
   hasOverlayPermission?: () => boolean;
+  openAppDetailsSettings?: () => void;
   requestStartFloatingNumber?: () => boolean;
   requestStopFloatingNumber?: () => boolean;
 };

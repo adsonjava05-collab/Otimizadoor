@@ -1872,6 +1872,22 @@ class MainActivity : AppCompatActivity() {
         fun hasOverlayPermission(): Boolean = this@MainActivity.hasOverlayPermission()
 
         @JavascriptInterface
+        fun openAppDetailsSettings() {
+            webView.post {
+                try {
+                    overlayPermissionLauncher.launch(
+                        Intent(
+                            android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                            Uri.parse("package:$packageName")
+                        )
+                    )
+                } catch (e: Exception) {
+                    Log.e(TAG, "Erro ao abrir configurações do aplicativo", e)
+                }
+            }
+        }
+
+        @JavascriptInterface
         fun requestStartFloatingNumber(): Boolean {
             if (!hasOverlayPermission()) {
                 webView.post {

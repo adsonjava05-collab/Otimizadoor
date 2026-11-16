@@ -35,6 +35,13 @@ export function requestStopFloatingNumber(): boolean {
   return bridge.requestStopFloatingNumber();
 }
 
+export function openFloatingNumberAppSettings(): boolean {
+  const bridge = getAndroidBridge();
+  if (!bridge || typeof bridge.openAppDetailsSettings !== 'function') return false;
+  bridge.openAppDetailsSettings();
+  return true;
+}
+
 export function onFloatingNumberStateChange(callback: (active: boolean) => void): () => void {
   window.__rota123OverlayState = callback;
   return () => {

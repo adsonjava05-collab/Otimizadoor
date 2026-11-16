@@ -3,7 +3,7 @@ import { CheckCircle2, ChevronLeft, ChevronRight, Layers, Settings, ShieldAlert 
 
 interface FloatingNumberTutorialProps {
   onCancel: () => void;
-  onOpenSettings: () => void;
+  onOpenSettings?: () => void;
 }
 
 const STEPS = [
@@ -18,14 +18,14 @@ const STEPS = [
     icon: ShieldAlert,
     title: 'Configurações restritas',
     description:
-      'Em alguns aparelhos, o Android pede autorizações extras para sobreposição, dependendo da versão. Se a opção aparecer bloqueada, libere o acesso restrito do aplicativo nas configurações do aparelho.',
+      'Em alguns aparelhos, o Android bloqueia a permissão. Se isso acontecer, toque nos três pontos no canto superior da tela de informações do aplicativo e escolha Permitir configurações restritas. Essa opção aparece somente em algumas versões do Android.',
     iconClass: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
   },
   {
     icon: CheckCircle2,
     title: 'Ativação',
     description:
-      'Toque em Abrir configurações, permita a sobreposição para o Otimiza Flash e volte para o aplicativo. O gerador será ativado automaticamente.',
+      'Em Configurações, procure Aparecer sobre outros aplicativos, ative a opção para o Otimiza Flash e volte ao aplicativo.',
     iconClass: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
   },
 ];
@@ -82,7 +82,7 @@ export function FloatingNumberTutorial({ onCancel, onOpenSettings }: FloatingNum
             onClick={onCancel}
             className="w-full rounded-xl px-4 py-3 text-sm font-semibold text-slate-500 transition-colors hover:text-slate-700 sm:w-auto dark:text-slate-400 dark:hover:text-slate-200"
           >
-            Cancelar
+            {onOpenSettings ? 'Cancelar' : 'Fechar'}
           </button>
           <div className="flex gap-2">
             {step > 0 && (
@@ -95,13 +95,22 @@ export function FloatingNumberTutorial({ onCancel, onOpenSettings }: FloatingNum
               </button>
             )}
             {isLast ? (
-              <button
-                onClick={onOpenSettings}
-                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-brand-500 px-4 py-3 text-sm font-bold text-slate-900 transition-colors hover:bg-brand-400 active:scale-[0.98] sm:flex-none"
-              >
-                <Settings className="h-4 w-4" />
-                Abrir configurações
-              </button>
+              onOpenSettings ? (
+                <button
+                  onClick={onOpenSettings}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-brand-500 px-4 py-3 text-sm font-bold text-slate-900 transition-colors hover:bg-brand-400 active:scale-[0.98] sm:flex-none"
+                >
+                  <Settings className="h-4 w-4" />
+                  Abrir configurações
+                </button>
+              ) : (
+                <button
+                  onClick={onCancel}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-brand-500 px-4 py-3 text-sm font-bold text-slate-900 transition-colors hover:bg-brand-400 active:scale-[0.98] sm:flex-none"
+                >
+                  Concluir
+                </button>
+              )
             ) : (
               <button
                 onClick={() => setStep(step + 1)}

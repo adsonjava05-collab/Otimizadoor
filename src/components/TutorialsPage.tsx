@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ArrowLeft, PlayCircle, CheckCircle, ChevronRight, Route, Users } from 'lucide-react';
+import { ArrowLeft, PlayCircle, ChevronRight, Hash, Route, Users } from 'lucide-react';
 import { getTutorialStatus } from '../services/tutorialService';
 import { FlexGuidedTour } from './FlexGuidedTour';
 import { FrotaGuidedTour } from './FrotaGuidedTour';
+import { FloatingNumberTutorial } from './FloatingNumberTutorial';
 import type { TutorialType } from '../services/tutorialService';
 
 interface TutorialsPageProps {
@@ -10,8 +11,10 @@ interface TutorialsPageProps {
   onBack: () => void;
 }
 
+type TutorialCardId = TutorialType | 'overlay';
+
 interface TutorialInfo {
-  type: TutorialType;
+  id: TutorialCardId;
   title: string;
   description: string;
   icon: typeof Route;
@@ -20,17 +23,24 @@ interface TutorialInfo {
 
 const TUTORIALS: TutorialInfo[] = [
   {
-    type: 'flex',
+    id: 'flex',
     title: 'Tutorial Flex (Interativo)',
     description: 'Apresentação guiada passo a passo do Preparar Rota',
     icon: Route,
     iconBg: 'from-brand-500 to-accent-400',
   },
   {
-    type: 'frota',
+    id: 'frota',
     title: 'Tutorial Frota (Interativo)',
     description: 'Apresentação guiada passo a passo do Otimizar Frota',
     icon: Users,
+    iconBg: 'from-brand-500 to-accent-400',
+  },
+  {
+    id: 'overlay',
+    title: 'Gerador de Números — Permissão de Sobreposição',
+    description: 'Como liberar o gerador flutuante para aparecer sobre outros aplicativos',
+    icon: Hash,
     iconBg: 'from-brand-500 to-accent-400',
   },
 ];
@@ -38,11 +48,12 @@ const TUTORIALS: TutorialInfo[] = [
 export function TutorialsPage({ userId, onBack }: TutorialsPageProps) {
   const [statuses, setStatuses] = useState<Record<string, string>>({});
   const [activeTour, setActiveTour] = useState<TutorialType | null>(null);
+  const [showOverlayTutorial, setShowOverlayTutorial] = useState(false);
 
   useEffect(() => {
     const s: Record<string, string> = {};
     for (const t of TUTORIALS) {
-      s[t.type] = getTutorialStatus(t.type);
+      if (t.id !== 'overlay') s[t.id] = getTutorialStatus(t.id);
     }
     setStatuses(s);
   }, []);
@@ -99,13 +110,16 @@ export function TutorialsPage({ userId, onBack }: TutorialsPageProps) {
       <main className="flex flex-1 flex-col items-center justify-center px-4 py-8">
         <div className="grid w-full max-w-md gap-4">
           {TUTORIALS.map((tutorial) => {
-            const status = statuses[tutorial.type] ?? 'pendente';
-            const isDone = status === 'concluido' || status === 'pulado';
+            const isOverlay = tutorial.id === 'overlay';
+            const status = statuses[tutorial.id] ?? 'pendente';
+            const isDone = !isOverlay && (status === 'concluido' || status === 'pulado');
             const Icon = tutorial.icon;
             return (
               <button
-                key={tutorial.type}
-                onClick={() => setActiveTour(tutorial.type)}
+                key={tutorial.id}
+                onClick={() =>
+                  tutorial.id === 'overlay' ? setShowOverlayTutorial(true) : setActiveTour(tutorial.id)
+                }
                 className="group w-full rounded-3xl border border-slate-200 bg-white p-6 text-center shadow-sm transition-all hover:-translate-y-1 hover:border-brand-300 hover:shadow-xl dark:border-slate-700 dark:bg-slate-800 dark:hover:border-brand-500"
               >
                 <div
@@ -121,7 +135,7 @@ export function TutorialsPage({ userId, onBack }: TutorialsPageProps) {
                       : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300'
                   }`}
                 >
-                  {isDone ? 'Concluído' : 'Interativo'}
+                  {isOverlay ? 'Consulta' : isDone ? 'Concluído' : 'Interativo'}
                 </span>
 
                 <h2 className="mt-3 text-xl font-bold text-slate-900 dark:text-white">
@@ -132,7 +146,7 @@ export function TutorialsPage({ userId, onBack }: TutorialsPageProps) {
                 </p>
 
                 <div className="mt-6 flex items-center justify-center gap-1 text-sm font-semibold text-brand-700 transition-transform group-hover:translate-x-1 dark:text-brand-400">
-                  {isDone ? 'Refazer tutorial' : 'Iniciar tutorial'}
+                  {isOverlay ? 'Consultar tutorial' : isDone ? 'Refazer tutorial' : 'Iniciar tutorial'}
                   <ChevronRight className="h-4 w-4" />
                 </div>
               </button>
@@ -140,6 +154,10 @@ export function TutorialsPage({ userId, onBack }: TutorialsPageProps) {
           })}
         </div>
       </main>
+
+      {showOverlayTutorial && (
+        <FloatingNumberTutorial onCancel={() => setShowOverlayTutorial(false)} />
+      )}
     </div>
   );
 }

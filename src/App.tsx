@@ -69,7 +69,7 @@ import { addFrotaImportEntry } from './services/historyService';
 import { deleteSharedFile, getLatestSharedFile, clearAllSharedFiles } from './services/sharedFileService';
 import { getFlowState, saveFlowState, clearFlowState, WAITING_PDF_STEPS, type FlowState } from './services/addressFlowService';
 import { saveBlobToDevice } from './services/nativeDownload';
-import { isFloatingNumberSupported, getFloatingNumberActive, hasFloatingNumberPermission, requestStartFloatingNumber, requestStopFloatingNumber, onFloatingNumberStateChange } from './services/floatingNumberService';
+import { isFloatingNumberSupported, getFloatingNumberActive, hasFloatingNumberPermission, requestStartFloatingNumber, requestStopFloatingNumber, openFloatingNumberAppSettings, onFloatingNumberStateChange } from './services/floatingNumberService';
 import { clearStoredRoute, loadStoredRoute, saveStoredRoute } from './services/routeFileStore';
 import { FrotaGuidedTour } from './components/FrotaGuidedTour';
 
@@ -996,7 +996,7 @@ function App() {
             onCancel={() => setShowFloatingTutorial(false)}
             onOpenSettings={() => {
               setShowFloatingTutorial(false);
-              requestStartFloatingNumber();
+              openFloatingNumberAppSettings();
             }}
           />
         )}
