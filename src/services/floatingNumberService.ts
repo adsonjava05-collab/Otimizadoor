@@ -16,6 +16,13 @@ export function getFloatingNumberActive(): boolean {
   return bridge.isFloatingNumberActive();
 }
 
+export function hasFloatingNumberPermission(): boolean {
+  const bridge = getAndroidBridge();
+  if (!bridge) return false;
+  if (typeof bridge.hasOverlayPermission === 'function') return bridge.hasOverlayPermission();
+  return getFloatingNumberActive();
+}
+
 export function requestStartFloatingNumber(): boolean {
   const bridge = getAndroidBridge();
   if (!bridge || typeof bridge.requestStartFloatingNumber !== 'function') return false;

@@ -24,6 +24,7 @@ import { Dashboard } from './components/Dashboard';
 import { Scanner } from './components/Scanner';
 import { SearchComponent } from './components/Search';
 import { DeliveryList } from './components/DeliveryList';
+import { FloatingNumberTutorial } from './components/FloatingNumberTutorial';
 import type { ScanFilter } from './types';
 import { ExportModal } from './components/Export';
 import { ToastContainer, type ToastData, type ToastType } from './components/Toast';
@@ -68,7 +69,7 @@ import { addFrotaImportEntry } from './services/historyService';
 import { deleteSharedFile, getLatestSharedFile, clearAllSharedFiles } from './services/sharedFileService';
 import { getFlowState, saveFlowState, clearFlowState, WAITING_PDF_STEPS, type FlowState } from './services/addressFlowService';
 import { saveBlobToDevice } from './services/nativeDownload';
-import { isFloatingNumberSupported, getFloatingNumberActive, requestStartFloatingNumber, requestStopFloatingNumber, onFloatingNumberStateChange } from './services/floatingNumberService';
+import { isFloatingNumberSupported, getFloatingNumberActive, hasFloatingNumberPermission, requestStartFloatingNumber, requestStopFloatingNumber, onFloatingNumberStateChange } from './services/floatingNumberService';
 import { clearStoredRoute, loadStoredRoute, saveStoredRoute } from './services/routeFileStore';
 import { FrotaGuidedTour } from './components/FrotaGuidedTour';
 
@@ -129,6 +130,7 @@ function App() {
   const [showFlexTour, setShowFlexTour] = useState(false);
   const [showFrotaTour, setShowFrotaTour] = useState(false);
   const [floatingNumberOn, setFloatingNumberOn] = useState(() => isFloatingNumberSupported() && getFloatingNumberActive());
+  const [showFloatingTutorial, setShowFloatingTutorial] = useState(false);
   const [xlsxSharedFile, setXlsxSharedFile] = useState<SharedFileData | null>(null);
   const [externalProcessing, setExternalProcessing] = useState(false);
   const [flowState, setFlowState] = useState<FlowState>(() => getFlowState());
@@ -244,6 +246,10 @@ function App() {
     if (!isFloatingNumberSupported()) return;
     if (floatingNumberOn) {
       requestStopFloatingNumber();
+      return;
+    }
+    if (!hasFloatingNumberPermission()) {
+      setShowFloatingTutorial(true);
       return;
     }
     const started = requestStartFloatingNumber();
@@ -984,6 +990,16 @@ function App() {
             </div>
           )}
         </main>
+
+        {showFloatingTutorial && (
+          <FloatingNumberTutorial
+            onCancel={() => setShowFloatingTutorial(false)}
+            onOpenSettings={() => {
+              setShowFloatingTutorial(false);
+              requestStartFloatingNumber();
+            }}
+          />
+        )}
 
         {/* Export modal */}
         {showExport && hasData && (
