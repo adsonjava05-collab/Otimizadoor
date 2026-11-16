@@ -228,6 +228,7 @@ export async function updateHistoryCompletion(id: string, completedAt: number): 
 export async function deleteImportEntry(id: string): Promise<void> {
   try {
     await deleteRecord('import_history', id);
+    await deleteRecord('active_sessions', id);
   } catch (err) {
     console.error('Error deleting import entry:', err);
   }
@@ -264,7 +265,9 @@ export function reexportXlsx(entry: HistoryEntry): void {
 
 export async function findByFileName(fileName: string): Promise<HistoryEntry | null> {
   try {
-    const match = (await getSortedImports()).find((r) => r.fileName === fileName);
+    const match = (await getSortedImports()).find(
+      (r) => r.importType !== 'frota' && r.fileName === fileName
+    );
     return match ? toHistoryEntry(match) : null;
   } catch (err) {
     console.error('Error finding import by file name:', err);
