@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Moon, Sun, ArrowUp, Menu, X, History, Users, PlayCircle, Home, Download, Hash, MapPin } from 'lucide-react';
+import { Moon, Sun, ArrowUp, Menu, X, History, Users, PlayCircle, Home, Download, Hash, MapPin, ChevronRight } from 'lucide-react';
 import type { RawRow, DeliveryGroup, CheckState } from './types';
 import {
   groupDeliveriesWithOptions,
@@ -73,7 +73,7 @@ import { saveBlobToDevice } from './services/nativeDownload';
 import { isFloatingNumberSupported, getFloatingNumberActive, hasFloatingNumberPermission, requestStartFloatingNumber, requestStopFloatingNumber, openFloatingNumberAppSettings, onFloatingNumberStateChange } from './services/floatingNumberService';
 import { clearStoredRoute, loadStoredRoute, saveStoredRoute } from './services/routeFileStore';
 import { FrotaGuidedTour } from './components/FrotaGuidedTour';
-import { LocationsScreen } from './components/LocationsScreen';
+import { LocationsScreen, LOCATIONS } from './components/LocationsScreen';
 
 declare global {
   interface Window {
@@ -130,6 +130,7 @@ function App() {
 
   const [showTutorialsPage, setShowTutorialsPage] = useState(false);
   const [showLocationsPage, setShowLocationsPage] = useState(false);
+  const [activeLocationId, setActiveLocationId] = useState<string | null>(null);
   const [showFlexTour, setShowFlexTour] = useState(false);
   const [showFrotaTour, setShowFrotaTour] = useState(false);
   const [floatingNumberOn, setFloatingNumberOn] = useState(() => isFloatingNumberSupported() && getFloatingNumberActive());
@@ -243,6 +244,16 @@ function App() {
   useEffect(() => {
     if (!isFloatingNumberSupported()) return;
     return onFloatingNumberStateChange((active) => setFloatingNumberOn(active));
+  }, []);
+
+  const activeLocation = activeLocationId ? LOCATIONS.find((l) => l.id === activeLocationId) ?? null : null;
+
+  const handleStartLocation = useCallback((id: string) => {
+    setActiveLocationId(id);
+  }, []);
+
+  const handleStopLocation = useCallback((id: string) => {
+    setActiveLocationId((prev) => (prev === id ? null : prev));
   }, []);
 
   const handleToggleFloatingNumber = () => {
@@ -806,6 +817,9 @@ function App() {
     return (
       <div className={dark ? 'dark' : ''}>
         <LocationsScreen
+          activeId={activeLocationId}
+          onStart={handleStartLocation}
+          onStop={handleStopLocation}
           onBack={() => setShowLocationsPage(false)}
         />
       </div>
@@ -901,6 +915,9 @@ function App() {
                       >
                         <MapPin className="h-5 w-5 text-brand-700" />
                         Localização
+                        {activeLocationId && (
+                          <span className="ml-auto h-2.5 w-2.5 shrink-0 rounded-full bg-emerald-500" />
+                        )}
                       </button>
                       <div className="flex w-full min-w-0 items-center justify-between gap-3 px-4 py-3.5">
                         <span className="flex min-w-0 items-center gap-3 text-sm font-medium text-slate-700 dark:text-slate-200">
@@ -949,6 +966,34 @@ function App() {
             </div>
           </div>
         </header>
+
+        {activeLocation && !hasData && !showPrepareRoute && !showFrota && (
+          <div className="mx-auto max-w-2xl px-4 pt-4">
+            <button
+              onClick={() => setShowLocationsPage(true)}
+              className="flex w-full items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-left transition-all hover:border-emerald-300 hover:bg-emerald-100 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:hover:border-emerald-700"
+            >
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-100 dark:bg-emerald-900/40">
+                <MapPin className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="inline-block h-2 w-2 shrink-0 rounded-full bg-emerald-500" />
+                  <p className="truncate text-sm font-semibold text-emerald-800 dark:text-emerald-200">
+                    Localização selecionada (demonstração)
+                  </p>
+                </div>
+                <p className="mt-0.5 truncate text-xs text-emerald-700 dark:text-emerald-300">
+                  {activeLocation.address}
+                </p>
+              </div>
+              <span className="flex shrink-0 items-center gap-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+                Gerenciar
+                <ChevronRight className="h-4 w-4" />
+              </span>
+            </button>
+          </div>
+        )}
 
         <main className="mx-auto max-w-2xl px-4 py-4 pb-28">
           {!hasData ? (

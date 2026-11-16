@@ -1,13 +1,12 @@
-import { useState } from 'react';
 import { ArrowLeft, MapPin, Play, Square, Info } from 'lucide-react';
 
-interface LocationInfo {
+export interface LocationInfo {
   id: string;
   name: string;
   address: string;
 }
 
-const LOCATIONS: LocationInfo[] = [
+export const LOCATIONS: LocationInfo[] = [
   { id: '1', name: 'Localização 1', address: 'Avenida Paulista, 1010' },
   { id: '2', name: 'Localização 2', address: 'Rua Machado Nunes, 87' },
   { id: '3', name: 'Localização 3', address: 'Rua Joaquim Meira de Siqueira, 260' },
@@ -15,19 +14,13 @@ const LOCATIONS: LocationInfo[] = [
 ];
 
 interface LocationsScreenProps {
+  activeId: string | null;
+  onStart: (id: string) => void;
+  onStop: (id: string) => void;
   onBack: () => void;
 }
 
-export function LocationsScreen({ onBack }: LocationsScreenProps) {
-  const [activeId, setActiveId] = useState<string | null>(null);
-
-  const handleStart = (id: string) => {
-    setActiveId(id);
-  };
-
-  const handleStop = (id: string) => {
-    if (activeId === id) setActiveId(null);
-  };
+export function LocationsScreen({ activeId, onStart, onStop, onBack }: LocationsScreenProps) {
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-100 dark:bg-slate-900">
@@ -118,7 +111,7 @@ export function LocationsScreen({ onBack }: LocationsScreenProps) {
 
                   <div className="mt-4 grid grid-cols-2 gap-3">
                     <button
-                      onClick={() => handleStart(loc.id)}
+                      onClick={() => onStart(loc.id)}
                       disabled={isActive}
                       className={`flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-all ${
                         isActive
@@ -130,7 +123,7 @@ export function LocationsScreen({ onBack }: LocationsScreenProps) {
                       Iniciar
                     </button>
                     <button
-                      onClick={() => handleStop(loc.id)}
+                      onClick={() => onStop(loc.id)}
                       disabled={!isActive}
                       className={`flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-all ${
                         !isActive
