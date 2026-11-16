@@ -1888,32 +1888,6 @@ class MainActivity : AppCompatActivity() {
         }
 
         @JavascriptInterface
-        fun getFloatingNumberAutoFill(): Boolean =
-            FloatingNumberService.isAutoFillEnabled(this@MainActivity)
-
-        @JavascriptInterface
-        fun setFloatingNumberAutoFill(enabled: Boolean) {
-            FloatingNumberService.setAutoFillEnabled(this@MainActivity, enabled)
-        }
-
-        @JavascriptInterface
-        fun isFillAccessibilityConnected(): Boolean =
-            FloatingFillAccessibilityService.isConnected()
-
-        @JavascriptInterface
-        fun openAccessibilitySettings() {
-            webView.post {
-                try {
-                    startActivity(
-                        Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS)
-                    )
-                } catch (e: Exception) {
-                    Log.e(TAG, "Erro ao abrir configurações de acessibilidade", e)
-                }
-            }
-        }
-
-        @JavascriptInterface
         fun requestStartFloatingNumber(): Boolean {
             if (!hasOverlayPermission()) {
                 webView.post {

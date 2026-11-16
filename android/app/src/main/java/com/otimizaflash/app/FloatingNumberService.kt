@@ -160,14 +160,6 @@ class FloatingNumberService : Service() {
 
                 val number = generateNumber()
 
-                if (
-                    isAutoFillEnabled(this@FloatingNumberService) &&
-                    FloatingFillAccessibilityService.fillFocusedInput(number)
-                ) {
-                    showCopiedFeedback()
-                    return@setOnClickListener
-                }
-
                 val copied = copyToClipboard(number)
 
                 if (copied) {
@@ -468,25 +460,8 @@ class FloatingNumberService : Service() {
         private const val FEEDBACK_MS =
             700L
 
-        private const val AUTO_FILL_PREFS = "floating_number_prefs"
-        private const val AUTO_FILL_KEY = "auto_fill_enabled"
-
         @Volatile
         var isRunning: Boolean = false
             private set
-
-        fun isAutoFillEnabled(context: Context): Boolean {
-            return context
-                .getSharedPreferences(AUTO_FILL_PREFS, Context.MODE_PRIVATE)
-                .getBoolean(AUTO_FILL_KEY, false)
-        }
-
-        fun setAutoFillEnabled(context: Context, enabled: Boolean) {
-            context
-                .getSharedPreferences(AUTO_FILL_PREFS, Context.MODE_PRIVATE)
-                .edit()
-                .putBoolean(AUTO_FILL_KEY, enabled)
-                .apply()
-        }
     }
 }

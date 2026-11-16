@@ -42,31 +42,6 @@ export function openFloatingNumberAppSettings(): boolean {
   return true;
 }
 
-export function getFloatingNumberAutoFill(): boolean {
-  const bridge = getAndroidBridge();
-  if (!bridge || typeof bridge.getFloatingNumberAutoFill !== 'function') return false;
-  return bridge.getFloatingNumberAutoFill();
-}
-
-export function setFloatingNumberAutoFill(enabled: boolean): void {
-  const bridge = getAndroidBridge();
-  if (!bridge || typeof bridge.setFloatingNumberAutoFill !== 'function') return;
-  bridge.setFloatingNumberAutoFill(enabled);
-}
-
-export function isFillAccessibilityConnected(): boolean {
-  const bridge = getAndroidBridge();
-  if (!bridge || typeof bridge.isFillAccessibilityConnected !== 'function') return false;
-  return bridge.isFillAccessibilityConnected();
-}
-
-export function openAccessibilitySettings(): boolean {
-  const bridge = getAndroidBridge();
-  if (!bridge || typeof bridge.openAccessibilitySettings !== 'function') return false;
-  bridge.openAccessibilitySettings();
-  return true;
-}
-
 export function onFloatingNumberStateChange(callback: (active: boolean) => void): () => void {
   window.__rota123OverlayState = callback;
   return () => {

@@ -9,10 +9,6 @@ type AndroidBridge = {
   isFloatingNumberActive?: () => boolean;
   hasOverlayPermission?: () => boolean;
   openAppDetailsSettings?: () => void;
-  getFloatingNumberAutoFill?: () => boolean;
-  setFloatingNumberAutoFill?: (enabled: boolean) => void;
-  isFillAccessibilityConnected?: () => boolean;
-  openAccessibilitySettings?: () => void;
   requestStartFloatingNumber?: () => boolean;
   requestStopFloatingNumber?: () => boolean;
 };

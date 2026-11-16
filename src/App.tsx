@@ -25,7 +25,6 @@ import { Scanner } from './components/Scanner';
 import { SearchComponent } from './components/Search';
 import { DeliveryList } from './components/DeliveryList';
 import { FloatingNumberTutorial } from './components/FloatingNumberTutorial';
-import { FloatingNumberModeSelector } from './components/FloatingNumberModeSelector';
 import type { ScanFilter } from './types';
 import { ExportModal } from './components/Export';
 import { ToastContainer, type ToastData, type ToastType } from './components/Toast';
@@ -901,7 +900,6 @@ function App() {
                           />
                         </button>
                       </div>
-                      {isFloatingNumberSupported() && <FloatingNumberModeSelector />}
                       <div className="my-2 border-t border-slate-200 dark:border-slate-700" />
                       <button
                         onClick={() => {
