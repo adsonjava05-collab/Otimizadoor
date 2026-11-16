@@ -1869,6 +1869,9 @@ class MainActivity : AppCompatActivity() {
         }
 
         @JavascriptInterface
+        fun hasOverlayPermission(): Boolean = this@MainActivity.hasOverlayPermission()
+
+        @JavascriptInterface
         fun requestStartFloatingNumber(): Boolean {
             if (!hasOverlayPermission()) {
                 webView.post {
