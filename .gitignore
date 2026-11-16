@@ -21,3 +21,8 @@ dist-ssr
 *.sln
 *.sw?
 .env
+
+# Assinatura de release (nunca commitar)
+android/keystore.properties
+*.jks
+*.keystore
