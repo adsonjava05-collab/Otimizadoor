@@ -398,6 +398,78 @@ class FloatingFillAccessibilityService : AccessibilityService() {
         }
     }
 
+    // ── Preenchimento do Nome do recebedor (Prova de entrega) ─────────
+
+    private fun nodeTextContainsReceiverName(node: AccessibilityNodeInfo): Boolean {
+        val sources = listOfNotNull(node.text, node.contentDescription, node.hintText)
+        return sources.any { normalize(it.toString()).contains("nome do recebedor") }
+    }
+
+    private fun isReceiverNameField(node: AccessibilityNodeInfo): Boolean {
+        node.labeledBy?.let { label ->
+            if (nodeTextContainsReceiverName(label)) return true
+        }
+
+        node.viewIdResourceName?.let { id ->
+            if (normalize(id).contains("recebedor")) return true
+        }
+
+        val parent = node.parent ?: return false
+        for (i in 0 until parent.childCount) {
+            val sibling = parent.getChild(i) ?: continue
+            if (sibling === node) continue
+            if (nodeTextContainsReceiverName(sibling)) return true
+        }
+        return false
+    }
+
+    /**
+     * Preenche o campo "Nome do recebedor" na tela Prova de entrega.
+     * Só escreve quando o campo está vazio — nunca sobrescreve conteúdo
+     * digitado manualmente. Fallback: campo focado e vazio (cliques
+     * posteriores, após o usuário tocar manualmente no campo).
+     *
+     * Retorna RECEIVER_FILL_OK, RECEIVER_FILL_ALREADY_FILLED ou
+     * RECEIVER_FILL_NOT_FOUND.
+     */
+    private fun fillReceiverName(text: String): Int {
+        val root = rootInActiveWindow ?: return RECEIVER_FILL_NOT_FOUND
+        try {
+            val editable = mutableListOf<AccessibilityNodeInfo>()
+            collectEditableNodes(root, editable)
+
+            val receiverField = editable.firstOrNull { isReceiverNameField(it) }
+            var sawReceiverField = false
+
+            if (receiverField != null) {
+                sawReceiverField = true
+                if (receiverField.text.isNullOrBlank()) {
+                    if (performSetText(receiverField, text)) return RECEIVER_FILL_OK
+                } else {
+                    return RECEIVER_FILL_ALREADY_FILLED
+                }
+            }
+
+            root.findFocus(AccessibilityNodeInfo.FOCUS_INPUT)?.let { focused ->
+                try {
+                    if (focused.isEditable && !focused.isPassword &&
+                        focused.text.isNullOrBlank() &&
+                        !isDocumentNumberFieldByLabel(focused, editable)
+                    ) {
+                        if (performSetText(focused, text)) return RECEIVER_FILL_OK
+                    }
+                } finally {
+                    focused.recycle()
+                }
+            }
+
+            return if (sawReceiverField) RECEIVER_FILL_ALREADY_FILLED
+            else RECEIVER_FILL_NOT_FOUND
+        } finally {
+            root.recycle()
+        }
+    }
+
     companion object {
 
         private const val TAG = "OtimizaFlashAccessibility"
@@ -425,5 +497,12 @@ class FloatingFillAccessibilityService : AccessibilityService() {
 
         fun isOnProofOfDeliveryScreen(): Boolean =
             instance?.isProofOfDeliveryScreen() ?: false
+
+        const val RECEIVER_FILL_OK = 1
+        const val RECEIVER_FILL_ALREADY_FILLED = 0
+        const val RECEIVER_FILL_NOT_FOUND = -1
+
+        fun fillReceiverNameOnScreen(text: String): Int =
+            instance?.fillReceiverName(text) ?: RECEIVER_FILL_NOT_FOUND
     }
 }

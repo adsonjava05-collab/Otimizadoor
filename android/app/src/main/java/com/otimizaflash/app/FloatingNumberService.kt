@@ -44,6 +44,10 @@ class FloatingNumberService : Service() {
 
     private var longPressFired: Boolean = false
 
+    // 0 = próximo clique preenche o Número do Documento;
+    // 1+ = próximo clique tenta preencher o Nome do recebedor.
+    private var proofStep: Int = 0
+
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(
@@ -346,13 +350,43 @@ class FloatingNumberService : Service() {
                     }
 
                     RecipientNameStore.set(name)
+                    proofStep = 0
 
-                    if (copyToClipboard(name)) {
-                        showTransientMessage("Nome copiado!")
-                    } else {
-                        showTransientMessage("Nome do destinatário não encontrado.")
-                    }
+                    showTransientMessage("Nome capturado!")
                     return
+                }
+
+                if (FloatingFillAccessibilityService.isOnProofOfDeliveryScreen()) {
+
+                    if (proofStep >= 1) {
+                        val name = RecipientNameStore.get()
+
+                        if (name != null) {
+                            when (
+                                FloatingFillAccessibilityService.fillReceiverNameOnScreen(name)
+                            ) {
+                                FloatingFillAccessibilityService.RECEIVER_FILL_OK,
+                                FloatingFillAccessibilityService.RECEIVER_FILL_ALREADY_FILLED -> {
+                                    showCopiedFeedback()
+                                    return
+                                }
+                            }
+                        }
+                        // Nome indisponível ou campo não localizado: cai no
+                        // fluxo normal (foco/cópia) sem gerar novo número.
+                        return
+                    }
+
+                    val number = generateNumber()
+
+                    if (
+                        isAutoFillEnabled(this) &&
+                        FloatingFillAccessibilityService.fillFocusedInput(number)
+                    ) {
+                        proofStep = 1
+                        showCopiedFeedback()
+                        return
+                    }
                 }
 
                 val number = generateNumber()
