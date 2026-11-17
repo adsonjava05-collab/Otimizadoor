@@ -541,7 +541,7 @@ class MainActivity : AppCompatActivity() {
 
         requestNotificationPermissionIfNeeded()
 
-        webView.loadUrl(PWA_URL)
+        webView.loadUrl(AppConfig.APP_URL)
 
         handleRouteIntent(intent)
 
@@ -679,10 +679,10 @@ class MainActivity : AppCompatActivity() {
             uri.host?.lowercase()
         ) {
 
+            AppConfig.APP_HOST,
             "rota123.com.br",
             "www.rota123.com.br",
-            "otimizador-lc0t.bolt.host",
-            "otimizaflash.vercel.app" -> true
+            "otimizador-lc0t.bolt.host" -> true
 
             else -> false
         }
@@ -1688,7 +1688,7 @@ class MainActivity : AppCompatActivity() {
 
         @JavascriptInterface
         fun getPWAUrl(): String =
-            PWA_URL
+            AppConfig.APP_URL
 
         @JavascriptInterface
         fun isTtsReady(): Boolean =
@@ -2205,9 +2205,6 @@ class MainActivity : AppCompatActivity() {
 
         private val savedFileUris =
             ConcurrentHashMap<String, Uri>()
-
-        private const val PWA_URL =
-            "https://otimizaflash.vercel.app"
 
         private const val SERVICE_STATE_DELAY_MS =
             150L
