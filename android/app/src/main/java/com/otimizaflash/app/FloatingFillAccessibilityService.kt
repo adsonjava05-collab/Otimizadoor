@@ -441,10 +441,36 @@ class FloatingFillAccessibilityService : AccessibilityService() {
     }
 
     /**
+     * Texto real do campo, desconsiderando placeholder/hint e rótulos.
+     * Alguns campos (especialmente em WebView) expõem o placeholder
+     * (ex.: "Digite") como se fosse text, o que fazia o campo parecer
+     * preenchido. Retorna null quando o campo deve ser considerado vazio.
+     */
+    private fun fieldRealText(node: AccessibilityNodeInfo): String? {
+        val raw = node.text?.toString()?.trim()
+        if (raw.isNullOrEmpty()) return null
+
+        val normalized = normalize(raw)
+
+        node.hintText?.toString()?.let { hint ->
+            if (normalized == normalize(hint)) return null
+        }
+
+        // Placeholders genéricos e o próprio rótulo exposto como texto.
+        if (normalized == "digite" || normalized == "digite aqui" ||
+            normalized == "informe" || normalized == "informe aqui" ||
+            normalized.contains("nome do recebedor")
+        ) return null
+
+        return raw
+    }
+
+    /**
      * Preenche o campo "Nome do recebedor" na tela Prova de entrega.
-     * Só escreve quando o campo está vazio — nunca sobrescreve conteúdo
-     * digitado manualmente. Fallback: campo focado e vazio (cliques
-     * posteriores, após o usuário tocar manualmente no campo).
+     * Só escreve quando o campo está realmente vazio (placeholder não conta
+     * como conteúdo) — nunca sobrescreve nome digitado manualmente.
+     * Fallback: campo focado e vazio (cliques posteriores, após o usuário
+     * tocar manualmente no campo).
      *
      * Retorna RECEIVER_FILL_OK, RECEIVER_FILL_ALREADY_FILLED ou
      * RECEIVER_FILL_NOT_FOUND.
@@ -464,13 +490,20 @@ class FloatingFillAccessibilityService : AccessibilityService() {
 
             if (receiverField != null) {
                 sawReceiverField = true
-                Log.d(DIAG_TAG, "Campo recebedor encontrado; vazio=${receiverField.text.isNullOrBlank()}")
-                if (receiverField.text.isNullOrBlank()) {
+                val realText = fieldRealText(receiverField)
+                val textEqualsHint = receiverField.text != null && receiverField.hintText != null &&
+                    normalize(receiverField.text.toString()) == normalize(receiverField.hintText.toString())
+                Log.d(DIAG_TAG,
+                    "Campo recebedor: classe=${receiverField.className} hint=${receiverField.hintText != null} " +
+                        "textoIgualHint=$textEqualsHint " +
+                        "editavel=${receiverField.isEditable} focado=${receiverField.isSelected || receiverField.isFocused} " +
+                        "vazioPosPlaceholder=${realText == null}")
+                if (realText == null) {
                     val ok = performSetText(receiverField, text)
                     Log.d(DIAG_TAG, "ACTION_SET_TEXT (campo recebedor): $ok")
                     if (ok) return RECEIVER_FILL_OK
                 } else {
-                    Log.d(DIAG_TAG, "Interrompido: campo recebedor já contém conteúdo")
+                    Log.d(DIAG_TAG, "Interrompido: campo recebedor contém texto digitado (tamanho=${realText.length})")
                     return RECEIVER_FILL_ALREADY_FILLED
                 }
             } else {
@@ -483,10 +516,12 @@ class FloatingFillAccessibilityService : AccessibilityService() {
             } else {
                 try {
                     val isEditable = focused.isEditable
-                    val isBlank = focused.text.isNullOrBlank()
+                    val realText = fieldRealText(focused)
                     val isDocField = isDocumentNumberFieldByLabel(focused, editable)
-                    Log.d(DIAG_TAG, "Fallback foco: editável=$isEditable vazio=$isBlank excluidoPorCampoDocumento=$isDocField")
-                    if (isEditable && !focused.isPassword && isBlank && !isDocField) {
+                    Log.d(DIAG_TAG,
+                        "Fallback foco: classe=${focused.className} editavel=$isEditable " +
+                            "vazioPosPlaceholder=${realText == null} excluidoPorCampoDocumento=$isDocField")
+                    if (isEditable && !focused.isPassword && realText == null && !isDocField) {
                         val ok = performSetText(focused, text)
                         Log.d(DIAG_TAG, "ACTION_SET_TEXT (foco): $ok")
                         if (ok) return RECEIVER_FILL_OK
