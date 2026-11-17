@@ -292,6 +292,87 @@ class FloatingFillAccessibilityService : AccessibilityService() {
         }
     }
 
+    // ── Tela de baixa do pedido + nome do destinatário (modo Gerar número) ──
+
+    /**
+     * Coleta, em ordem de leitura (pré-ordem), todos os textos visíveis.
+     * Returns the list; caller owns recycling of root.
+     */
+    private fun collectTextsOrdered(node: AccessibilityNodeInfo, out: MutableList<String>) {
+        listOfNotNull(node.text, node.contentDescription, node.hintText).forEach {
+            if (it.isNotBlank()) out.add(it.toString())
+        }
+        for (i in 0 until node.childCount) {
+            node.getChild(i)?.let { collectTextsOrdered(it, out) }
+        }
+    }
+
+    /**
+     * Verifica se a tela atual é a de baixa do pedido reconhecendo
+     * os elementos descritivos: título, seção do destinatário, botões.
+     */
+    private fun isOrderScreen(): Boolean {
+        val root = rootInActiveWindow ?: return false
+        try {
+            val texts = mutableListOf<String>()
+            collectTextsOrdered(root, texts)
+            val joined = texts.joinToString(" ") { normalize(it) }
+
+            val hasTitle = joined.contains("informacoes do pedido")
+            val hasRecipientSection = joined.contains("informacoes do destinatario")
+            val hasButtons = joined.contains("ocorrencia") && joined.contains("entregue")
+
+            return hasTitle && hasRecipientSection && hasButtons
+        } finally {
+            root.recycle()
+        }
+    }
+
+    /**
+     * Busca o nome do destinatário na tela de baixa.
+     * Estratégia: percorre os textos em ordem; ao encontrar "Informações do destinatário",
+     * o próximo texto significativo que não for "Tel" (nem rótulo vazio) é o nome.
+     * Pula rótulos/separadores conhecidos.
+     */
+    private fun findRecipientName(): String? {
+        val root = rootInActiveWindow ?: return null
+        try {
+            val texts = mutableListOf<String>()
+            collectTextsOrdered(root, texts)
+
+            val recipientIdx = texts.indexOfFirst {
+                normalize(it).contains("informacoes do destinatario")
+            }
+            if (recipientIdx < 0) return null
+
+            for (i in (recipientIdx + 1) until texts.size) {
+                val candidate = texts[i].trim()
+                val normalized = normalize(candidate)
+                if (normalized.isEmpty()) continue
+
+                // Parou no campo Tel — nome não estava acima.
+                if (normalized == "tel" || normalized.startsWith("tel ")) return null
+
+                // Rótulos de seção/campo que não são o nome.
+                if (normalized.contains("informacoes do") ||
+                    normalized.contains("ocorrencia") ||
+                    normalized.contains("entregue")
+                ) continue
+
+                // Ignora telefones.
+                if (PHONE_REGEX.containsMatchIn(candidate) &&
+                    candidate.filter { it.isDigit() }.length >= 10
+                ) continue
+
+                return candidate
+            }
+
+            return null
+        } finally {
+            root.recycle()
+        }
+    }
+
     companion object {
 
         private const val TAG = "OtimizaFlashAccessibility"
@@ -310,5 +391,11 @@ class FloatingFillAccessibilityService : AccessibilityService() {
 
         fun findPhoneOnScreen(): String? =
             instance?.findPhoneNumber()
+
+        fun isOnOrderScreen(): Boolean =
+            instance?.isOrderScreen() ?: false
+
+        fun findRecipientNameOnScreen(): String? =
+            instance?.findRecipientName()
     }
 }

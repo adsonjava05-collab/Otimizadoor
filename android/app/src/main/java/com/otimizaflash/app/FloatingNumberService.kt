@@ -336,6 +336,22 @@ class FloatingNumberService : Service() {
             }
 
             else -> {
+                if (FloatingFillAccessibilityService.isOnOrderScreen()) {
+                    val name = FloatingFillAccessibilityService.findRecipientNameOnScreen()
+
+                    if (name == null) {
+                        showTransientMessage("Nome do destinatário não encontrado.")
+                        return
+                    }
+
+                    if (copyToClipboard(name)) {
+                        showTransientMessage("Nome copiado!")
+                    } else {
+                        showTransientMessage("Nome do destinatário não encontrado.")
+                    }
+                    return
+                }
+
                 val number = generateNumber()
 
                 if (
