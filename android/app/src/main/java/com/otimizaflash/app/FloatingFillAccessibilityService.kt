@@ -243,9 +243,62 @@ class FloatingFillAccessibilityService : AccessibilityService() {
             .lowercase(Locale.ROOT)
             .trim()
 
+    // ── Busca de telefone (modo WhatsApp) ───────────────────────────────
+
+    private fun collectTexts(node: AccessibilityNodeInfo, out: MutableList<String>) {
+        listOfNotNull(node.text, node.contentDescription, node.hintText).forEach {
+            if (it.isNotBlank()) out.add(it.toString())
+        }
+        for (i in 0 until node.childCount) {
+            node.getChild(i)?.let { collectTexts(it, out) }
+        }
+    }
+
+    private fun extractPhoneCandidate(raw: String): String? {
+        val candidates = PHONE_REGEX.findAll(raw).map { it.value.trim() }
+        for (candidate in candidates) {
+            val digits = candidate.filter { it.isDigit() }
+            if (digits.length in 10..15) {
+                return candidate
+            }
+        }
+        return null
+    }
+
+    private fun findPhoneNumber(): String? {
+        val root = rootInActiveWindow ?: return null
+        try {
+            val texts = mutableListOf<String>()
+            collectTexts(root, texts)
+
+            // 1. "Tel" e o número no mesmo elemento.
+            for (text in texts) {
+                val match = TEL_MARK_REGEX.find(text) ?: continue
+                val remainder = text.substring(match.range.last + 1)
+                extractPhoneCandidate(remainder)?.let { return it }
+            }
+
+            // 2. "Tel" isolado, número em elemento seguinte.
+            for ((i, text) in texts.withIndex()) {
+                if (normalize(text) != "tel") continue
+                for (j in i + 1 until minOf(i + 4, texts.size)) {
+                    extractPhoneCandidate(texts[j])?.let { return it }
+                }
+            }
+
+            return null
+        } finally {
+            root.recycle()
+        }
+    }
+
     companion object {
 
         private const val TAG = "OtimizaFlashAccessibility"
+
+        private val TEL_MARK_REGEX = Regex("(?i)\\btel\\b")
+
+        private val PHONE_REGEX = Regex("\\+?[\\d][\\d\\s()\\-.]{6,}")
 
         @Volatile
         private var instance: FloatingFillAccessibilityService? = null
@@ -254,5 +307,8 @@ class FloatingFillAccessibilityService : AccessibilityService() {
 
         fun fillFocusedInput(text: String): Boolean =
             instance?.setTextOnFocusedInput(text) ?: false
+
+        fun findPhoneOnScreen(): String? =
+            instance?.findPhoneNumber()
     }
 }

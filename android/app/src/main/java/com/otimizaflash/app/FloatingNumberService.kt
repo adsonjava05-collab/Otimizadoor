@@ -325,8 +325,18 @@ class FloatingNumberService : Service() {
         when (getSelectedMode()) {
 
             MODE_WHATSAPP -> {
-                // Ação do WhatsApp será implementada posteriormente.
-                Log.d(TAG, "Modo WhatsApp: nenhuma ação configurada")
+                val phone = FloatingFillAccessibilityService.findPhoneOnScreen()
+
+                if (phone == null) {
+                    showTransientMessage("Telefone não encontrado nesta tela.")
+                    return
+                }
+
+                if (copyToClipboard(phone)) {
+                    showTransientMessage("Telefone copiado!")
+                } else {
+                    showTransientMessage("Telefone não encontrado nesta tela.")
+                }
             }
 
             else -> {
@@ -678,6 +688,25 @@ class FloatingNumberService : Service() {
 
             false
         }
+    }
+
+    private fun showTransientMessage(message: String) {
+
+        val button = buttonView ?: return
+
+        feedbackRunnable?.let {
+            handler.removeCallbacks(it)
+        }
+
+        button.animate().cancel()
+
+        val toast = android.widget.Toast.makeText(
+            this,
+            message,
+            android.widget.Toast.LENGTH_SHORT
+        )
+
+        toast.show()
     }
 
     private fun showCopiedFeedback() {
