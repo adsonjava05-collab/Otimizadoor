@@ -956,12 +956,12 @@ function App() {
                       <div className="flex w-full min-w-0 items-center justify-between gap-3 px-4 py-3.5">
                         <span className="flex min-w-0 items-center gap-3 text-sm font-medium text-slate-700 dark:text-slate-200">
                           <Hash className="h-5 w-5 shrink-0 text-emerald-500" />
-                          <span className="truncate">Gerar Número</span>
+                          <span className="truncate">Botão flutuante</span>
                         </span>
                         <button
                           role="switch"
                           aria-checked={floatingNumberOn}
-                          aria-label="Gerar Número"
+                          aria-label="Botão flutuante"
                           disabled={!isFloatingNumberSupported()}
                           title={isFloatingNumberSupported() ? undefined : 'Disponível somente no APK Android.'}
                           onClick={handleToggleFloatingNumber}
