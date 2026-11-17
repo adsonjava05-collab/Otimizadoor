@@ -373,6 +373,31 @@ class FloatingFillAccessibilityService : AccessibilityService() {
         }
     }
 
+    // ── Tela Prova de entrega (reconhecimento para futura 2ª etapa) ────
+
+    /**
+     * Reconhece a tela "Prova de entrega" pela presença conjunta dos
+     * textos: título "Prova de entrega", "Número do Documento" e
+     * "Nome do recebedor". Não depende de coordenadas fixas.
+     * Apenas identifica e localiza os campos — não preenche nada.
+     */
+    private fun isProofOfDeliveryScreen(): Boolean {
+        val root = rootInActiveWindow ?: return false
+        try {
+            val texts = mutableListOf<String>()
+            collectTextsOrdered(root, texts)
+            val joined = texts.joinToString(" ") { normalize(it) }
+
+            val hasTitle = joined.contains("prova de entrega")
+            val hasDocField = joined.contains("numero do documento")
+            val hasReceiverField = joined.contains("nome do recebedor")
+
+            return hasTitle && hasDocField && hasReceiverField
+        } finally {
+            root.recycle()
+        }
+    }
+
     companion object {
 
         private const val TAG = "OtimizaFlashAccessibility"
@@ -397,5 +422,8 @@ class FloatingFillAccessibilityService : AccessibilityService() {
 
         fun findRecipientNameOnScreen(): String? =
             instance?.findRecipientName()
+
+        fun isOnProofOfDeliveryScreen(): Boolean =
+            instance?.isProofOfDeliveryScreen() ?: false
     }
 }

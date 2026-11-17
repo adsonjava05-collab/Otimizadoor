@@ -340,9 +340,12 @@ class FloatingNumberService : Service() {
                     val name = FloatingFillAccessibilityService.findRecipientNameOnScreen()
 
                     if (name == null) {
+                        RecipientNameStore.clear()
                         showTransientMessage("Nome do destinatário não encontrado.")
                         return
                     }
+
+                    RecipientNameStore.set(name)
 
                     if (copyToClipboard(name)) {
                         showTransientMessage("Nome copiado!")
