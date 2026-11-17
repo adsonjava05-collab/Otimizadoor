@@ -6,6 +6,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.ClipData
+import android.content.ComponentName
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
@@ -550,6 +551,14 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        webView.post {
+            deliverOverlayState()
+            reportMockLocationState()
+        }
+    }
+
     // =========================================================
     // BOTÃO FLUTUANTE - GERADOR DE NÚMEROS
     // =========================================================
@@ -602,6 +611,64 @@ class MainActivity : AppCompatActivity() {
         val running = isFloatingNumberServiceRunning()
 
         reportOverlayState(running)
+    }
+
+    // =========================================================
+    // LOCALIZAÇÃO SIMULADA (MOCK LOCATION)
+    // =========================================================
+
+    private fun reportMockLocationState() {
+        val activeId = MockLocationService.activeLocationId ?: ""
+        val error = MockLocationService.lastError ?: ""
+
+        val safeId = JSONObject.quote(activeId)
+        val safeError = JSONObject.quote(error)
+
+        val js = """
+            if (window.__rota123MockLocationState) {
+                window.__rota123MockLocationState($safeId, $safeError);
+            }
+        """.trimIndent()
+
+        webView.post {
+            webView.evaluateJavascript(js, null)
+        }
+    }
+
+    private fun isMockLocationAppSelected(): Boolean {
+        return try {
+            val lm = getSystemService(LOCATION_SERVICE) as
+                android.location.LocationManager
+
+            val provider = lm.getProvider(
+                android.location.LocationManager.GPS_PROVIDER
+            )
+
+            // On API 31+ we can check requiresNetwork etc., but the real test
+            // is whether addTestProvider succeeds. We do a lightweight check:
+            // the app must have the mock_location permission (dev options).
+            val tries = contentResolver
+            val _ = tries
+
+            // Best available check: try a no-op test provider cycle.
+            try {
+                lm.addTestProvider(
+                    "rota123_test_check",
+                    false, false, false, false,
+                    true, true, true,
+                    android.location.Criteria.POWER_LOW
+                )
+                lm.setTestProviderEnabled("rota123_test_check", true)
+                lm.setTestProviderEnabled("rota123_test_check", false)
+                lm.removeTestProvider("rota123_test_check")
+                true
+            } catch (e: SecurityException) {
+                false
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Erro ao verificar mock app", e)
+            false
+        }
     }
 
     private fun reportOverlayState(running: Boolean) {
@@ -2039,6 +2106,93 @@ class MainActivity : AppCompatActivity() {
             return openSavedRoute(
                 fileName
             )
+        }
+
+        // =====================================================
+        // LOCALIZAÇÃO SIMULADA
+        // =====================================================
+
+        @JavascriptInterface
+        fun startMockLocation(locationId: String): Boolean {
+            if (locationId.isBlank()) return false
+            if (!MockLocations.hasCoordinates(locationId)) return false
+
+            webView.post {
+                try {
+                    val intent = Intent(
+                        this@MainActivity,
+                        MockLocationService::class.java
+                    ).apply {
+                        action = MockLocationService.ACTION_START
+                        putExtra(
+                            MockLocationService.EXTRA_LOCATION_ID,
+                            locationId
+                        )
+                    }
+
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        startForegroundService(intent)
+                    } else {
+                        startService(intent)
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Erro ao iniciar mock location", e)
+                    MockLocationService.lastError = "unknown"
+                }
+
+                webView.postDelayed({
+                    reportMockLocationState()
+                }, SERVICE_STATE_DELAY_MS)
+            }
+
+            return true
+        }
+
+        @JavascriptInterface
+        fun stopMockLocation(): Boolean {
+            webView.post {
+                try {
+                    val intent = Intent(
+                        this@MainActivity,
+                        MockLocationService::class.java
+                    ).apply {
+                        action = MockLocationService.ACTION_STOP
+                    }
+                    startService(intent)
+                } catch (e: Exception) {
+                    Log.e(TAG, "Erro ao parar mock location", e)
+                }
+
+                webView.postDelayed({
+                    reportMockLocationState()
+                }, SERVICE_STATE_DELAY_MS)
+            }
+
+            return true
+        }
+
+        @JavascriptInterface
+        fun getMockLocationActiveId(): String {
+            return MockLocationService.activeLocationId ?: ""
+        }
+
+        @JavascriptInterface
+        fun isMockLocationAppSelected(): Boolean {
+            return this@MainActivity.isMockLocationAppSelected()
+        }
+
+        @JavascriptInterface
+        fun openMockLocationSettings() {
+            webView.post {
+                try {
+                    val intent = Intent(
+                        android.provider.Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS
+                    )
+                    startActivity(intent)
+                } catch (e: Exception) {
+                    Log.e(TAG, "Erro ao abrir Opções do desenvolvedor", e)
+                }
+            }
         }
     }
 

@@ -15,6 +15,11 @@ type AndroidBridge = {
   openAccessibilitySettings?: () => void;
   requestStartFloatingNumber?: () => boolean;
   requestStopFloatingNumber?: () => boolean;
+  startMockLocation?: (locationId: string) => boolean;
+  stopMockLocation?: () => boolean;
+  getMockLocationActiveId?: () => string;
+  isMockLocationAppSelected?: () => boolean;
+  openMockLocationSettings?: () => void;
 };
 
 type SaveResolver = (saved: boolean, actualFileName: string | null) => void;

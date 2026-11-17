@@ -74,6 +74,14 @@ import { isFloatingNumberSupported, getFloatingNumberActive, hasFloatingNumberPe
 import { clearStoredRoute, loadStoredRoute, saveStoredRoute } from './services/routeFileStore';
 import { FrotaGuidedTour } from './components/FrotaGuidedTour';
 import { LocationsScreen, LOCATIONS } from './components/LocationsScreen';
+import {
+  isMockLocationSupported,
+  getMockLocationActiveId,
+  startMockLocation,
+  stopMockLocation,
+  onMockLocationStateChange,
+  type MockLocationError,
+} from './services/mockLocationService';
 
 declare global {
   interface Window {
@@ -130,7 +138,8 @@ function App() {
 
   const [showTutorialsPage, setShowTutorialsPage] = useState(false);
   const [showLocationsPage, setShowLocationsPage] = useState(false);
-  const [activeLocationId, setActiveLocationId] = useState<string | null>(null);
+  const [activeLocationId, setActiveLocationId] = useState<string | null>(() => isMockLocationSupported() ? getMockLocationActiveId() : null);
+  const [mockLocationError, setMockLocationError] = useState<MockLocationError>('');
   const [showFlexTour, setShowFlexTour] = useState(false);
   const [showFrotaTour, setShowFrotaTour] = useState(false);
   const [floatingNumberOn, setFloatingNumberOn] = useState(() => isFloatingNumberSupported() && getFloatingNumberActive());
@@ -246,15 +255,36 @@ function App() {
     return onFloatingNumberStateChange((active) => setFloatingNumberOn(active));
   }, []);
 
+  useEffect(() => {
+    if (!isMockLocationSupported()) return;
+    return onMockLocationStateChange((activeId, error) => {
+      setActiveLocationId(activeId);
+      setMockLocationError(error);
+    });
+  }, []);
+
+  const isNativeMock = isMockLocationSupported();
+
   const activeLocation = activeLocationId ? LOCATIONS.find((l) => l.id === activeLocationId) ?? null : null;
 
   const handleStartLocation = useCallback((id: string) => {
+    if (isNativeMock) {
+      const accepted = startMockLocation(id);
+      if (!accepted) {
+        setMockLocationError('no_coordinates');
+      }
+      return;
+    }
     setActiveLocationId(id);
-  }, []);
+  }, [isNativeMock]);
 
-  const handleStopLocation = useCallback((id: string) => {
-    setActiveLocationId((prev) => (prev === id ? null : prev));
-  }, []);
+  const handleStopLocation = useCallback((_id: string) => {
+    if (isNativeMock) {
+      stopMockLocation();
+      return;
+    }
+    setActiveLocationId((prev) => (prev === _id ? null : prev));
+  }, [isNativeMock]);
 
   const handleToggleFloatingNumber = () => {
     if (!isFloatingNumberSupported()) return;
@@ -820,6 +850,10 @@ function App() {
           activeId={activeLocationId}
           onStart={handleStartLocation}
           onStop={handleStopLocation}
+          isNativeMode={isNativeMock}
+          mockError={mockLocationError}
+          onOpenMockSettings={() => import('./services/mockLocationService').then((m) => m.openMockLocationSettings())}
+          onDismissError={() => setMockLocationError('')}
           onBack={() => setShowLocationsPage(false)}
         />
       </div>

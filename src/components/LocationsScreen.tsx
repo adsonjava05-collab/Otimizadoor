@@ -1,4 +1,4 @@
-import { ArrowLeft, MapPin, Play, Square, Info } from 'lucide-react';
+import { ArrowLeft, MapPin, Play, Square, Info, AlertCircle, Settings } from 'lucide-react';
 
 export interface LocationInfo {
   id: string;
@@ -13,14 +13,35 @@ export const LOCATIONS: LocationInfo[] = [
   { id: '4', name: 'Localização 4', address: 'Endereço a definir' },
 ];
 
+const NATIVE_AVAILABLE_IDS = new Set(['1']);
+
 interface LocationsScreenProps {
   activeId: string | null;
   onStart: (id: string) => void;
   onStop: (id: string) => void;
   onBack: () => void;
+  isNativeMode: boolean;
+  mockError: string;
+  onOpenMockSettings: () => void;
+  onDismissError: () => void;
 }
 
-export function LocationsScreen({ activeId, onStart, onStop, onBack }: LocationsScreenProps) {
+export function LocationsScreen({
+  activeId,
+  onStart,
+  onStop,
+  onBack,
+  isNativeMode,
+  mockError,
+  onOpenMockSettings,
+  onDismissError,
+}: LocationsScreenProps) {
+  const errorMessages: Record<string, string> = {
+    not_mock_app:
+      'Selecione o Otimiza Flash como app de localização fictícia nas Opções do desenvolvedor.',
+    no_coordinates: 'Esta localização ainda não tem coordenadas cadastradas.',
+    unknown: 'Não foi possível iniciar a simulação. Tente novamente.',
+  };
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-100 dark:bg-slate-900">
@@ -50,14 +71,43 @@ export function LocationsScreen({ activeId, onStart, onStop, onBack }: Locations
             <div className="mt-3 flex items-start gap-2 rounded-lg bg-amber-50 px-3 py-2.5 dark:bg-amber-950/30">
               <Info className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
               <p className="text-xs leading-relaxed text-amber-800 dark:text-amber-200">
-                Funcionalidade em demonstração. Os endereços são apenas exemplos visuais.
+                {isNativeMode
+                  ? 'Localização simulada via Android. Selecione o app nas Opções do desenvolvedor.'
+                  : 'Funcionalidade em demonstração. Os endereços são apenas exemplos visuais.'}
               </p>
             </div>
           </div>
 
+          {isNativeMode && mockError && mockError !== '' && (
+            <div className="flex items-start gap-3 rounded-2xl border border-rose-200 bg-rose-50 p-4 dark:border-rose-900/50 dark:bg-rose-950/30">
+              <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-rose-600 dark:text-rose-400" />
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-rose-800 dark:text-rose-200">
+                  {errorMessages[mockError] ?? 'Erro ao iniciar simulação.'}
+                </p>
+                {mockError === 'not_mock_app' && (
+                  <button
+                    onClick={onOpenMockSettings}
+                    className="mt-2 flex items-center gap-1.5 text-sm font-semibold text-rose-700 hover:text-rose-800 dark:text-rose-300"
+                  >
+                    <Settings className="h-4 w-4" />
+                    Abrir Opções do desenvolvedor
+                  </button>
+                )}
+                <button
+                  onClick={onDismissError}
+                  className="mt-2 text-xs text-rose-600 hover:underline dark:text-rose-400"
+                >
+                  Fechar aviso
+                </button>
+              </div>
+            </div>
+          )}
+
           <div className="space-y-4">
             {LOCATIONS.map((loc) => {
               const isActive = activeId === loc.id;
+              const hasCoords = !isNativeMode || NATIVE_AVAILABLE_IDS.has(loc.id);
               return (
                 <div
                   key={loc.id}
@@ -112,9 +162,9 @@ export function LocationsScreen({ activeId, onStart, onStop, onBack }: Locations
                   <div className="mt-4 grid grid-cols-2 gap-3">
                     <button
                       onClick={() => onStart(loc.id)}
-                      disabled={isActive}
+                      disabled={isActive || !hasCoords}
                       className={`flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-all ${
-                        isActive
+                        isActive || !hasCoords
                           ? 'cursor-not-allowed bg-slate-100 text-slate-400 dark:bg-slate-700 dark:text-slate-500'
                           : 'bg-emerald-600 text-white hover:bg-emerald-700 active:scale-[0.98]'
                       }`}
@@ -135,6 +185,11 @@ export function LocationsScreen({ activeId, onStart, onStop, onBack }: Locations
                       Parar
                     </button>
                   </div>
+                  {isNativeMode && !hasCoords && (
+                    <p className="mt-2 text-xs text-slate-400 dark:text-slate-500">
+                      Coordenadas ainda não cadastradas.
+                    </p>
+                  )}
                 </div>
               );
             })}
