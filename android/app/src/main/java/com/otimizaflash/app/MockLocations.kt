@@ -15,6 +15,18 @@ object MockLocations {
             name = "Vila Guilherme",
             latitude = -23.52012080,
             longitude = -46.60543151
+        ),
+        MockLocation(
+            id = "2",
+            name = "Lapa",
+            latitude = -23.51774718,
+            longitude = -46.72421649
+        ),
+        MockLocation(
+            id = "3",
+            name = "Guarulhos",
+            latitude = -23.489307,
+            longitude = -46.540940
         )
     )
 
