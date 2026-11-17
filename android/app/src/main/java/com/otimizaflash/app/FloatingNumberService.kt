@@ -690,9 +690,9 @@ class FloatingNumberService : Service() {
 
         val digits = phone.filter { it.isDigit() }
 
-        val message = "Olá, tudo bem? 😊 Sou entregador da Shopee e estou entrando em contato sobre sua entrega. 📦🤣"
+        val message = "Olá, tudo bem? 😊 Sou entregador da Shopee e estou entrando em contato sobre sua entrega. 📦🛵"
 
-        val encodedMessage = android.net.Uri.encode(message)
+        val encodedMessage = android.net.Uri.encode(message) 
 
         val uri = android.net.Uri.parse(
             "https://api.whatsapp.com/send?phone=$digits&text=$encodedMessage"
