@@ -382,7 +382,10 @@ class FloatingFillAccessibilityService : AccessibilityService() {
      * Apenas identifica e localiza os campos — não preenche nada.
      */
     private fun isProofOfDeliveryScreen(): Boolean {
-        val root = rootInActiveWindow ?: return false
+        val root = rootInActiveWindow ?: run {
+            Log.d(DIAG_TAG, "POD: rootInActiveWindow indisponível")
+            return false
+        }
         try {
             val texts = mutableListOf<String>()
             collectTextsOrdered(root, texts)
@@ -391,6 +394,8 @@ class FloatingFillAccessibilityService : AccessibilityService() {
             val hasTitle = joined.contains("prova de entrega")
             val hasDocField = joined.contains("numero do documento")
             val hasReceiverField = joined.contains("nome do recebedor")
+
+            Log.d(DIAG_TAG, "POD reconhecimento: titulo=$hasTitle docField=$hasDocField recebedorField=$hasReceiverField textosColetados=${texts.size}")
 
             return hasTitle && hasDocField && hasReceiverField
         } finally {
@@ -407,18 +412,30 @@ class FloatingFillAccessibilityService : AccessibilityService() {
 
     private fun isReceiverNameField(node: AccessibilityNodeInfo): Boolean {
         node.labeledBy?.let { label ->
-            if (nodeTextContainsReceiverName(label)) return true
+            if (nodeTextContainsReceiverName(label)) {
+                Log.d(DIAG_TAG, "Campo recebedor localizado por labeledBy")
+                return true
+            }
         }
 
         node.viewIdResourceName?.let { id ->
-            if (normalize(id).contains("recebedor")) return true
+            if (normalize(id).contains("recebedor")) {
+                Log.d(DIAG_TAG, "Campo recebedor localizado por viewId")
+                return true
+            }
         }
 
-        val parent = node.parent ?: return false
+        val parent = node.parent ?: run {
+            Log.d(DIAG_TAG, "Candidato sem pai — não avaliado por irmãos")
+            return false
+        }
         for (i in 0 until parent.childCount) {
             val sibling = parent.getChild(i) ?: continue
             if (sibling === node) continue
-            if (nodeTextContainsReceiverName(sibling)) return true
+            if (nodeTextContainsReceiverName(sibling)) {
+                Log.d(DIAG_TAG, "Campo recebedor localizado por irmão/rótulo vizinho")
+                return true
+            }
         }
         return false
     }
@@ -433,38 +450,55 @@ class FloatingFillAccessibilityService : AccessibilityService() {
      * RECEIVER_FILL_NOT_FOUND.
      */
     private fun fillReceiverName(text: String): Int {
-        val root = rootInActiveWindow ?: return RECEIVER_FILL_NOT_FOUND
+        val root = rootInActiveWindow ?: run {
+            Log.d(DIAG_TAG, "Preenche nome: rootInActiveWindow indisponível")
+            return RECEIVER_FILL_NOT_FOUND
+        }
         try {
             val editable = mutableListOf<AccessibilityNodeInfo>()
             collectEditableNodes(root, editable)
+            Log.d(DIAG_TAG, "Preenche nome: campos editáveis=${editable.size}")
 
             val receiverField = editable.firstOrNull { isReceiverNameField(it) }
             var sawReceiverField = false
 
             if (receiverField != null) {
                 sawReceiverField = true
+                Log.d(DIAG_TAG, "Campo recebedor encontrado; vazio=${receiverField.text.isNullOrBlank()}")
                 if (receiverField.text.isNullOrBlank()) {
-                    if (performSetText(receiverField, text)) return RECEIVER_FILL_OK
+                    val ok = performSetText(receiverField, text)
+                    Log.d(DIAG_TAG, "ACTION_SET_TEXT (campo recebedor): $ok")
+                    if (ok) return RECEIVER_FILL_OK
                 } else {
+                    Log.d(DIAG_TAG, "Interrompido: campo recebedor já contém conteúdo")
                     return RECEIVER_FILL_ALREADY_FILLED
                 }
+            } else {
+                Log.d(DIAG_TAG, "Campo recebedor NÃO localizado entre os editáveis")
             }
 
-            root.findFocus(AccessibilityNodeInfo.FOCUS_INPUT)?.let { focused ->
+            val focused = root.findFocus(AccessibilityNodeInfo.FOCUS_INPUT)
+            if (focused == null) {
+                Log.d(DIAG_TAG, "Fallback foco: nenhum campo focado")
+            } else {
                 try {
-                    if (focused.isEditable && !focused.isPassword &&
-                        focused.text.isNullOrBlank() &&
-                        !isDocumentNumberFieldByLabel(focused, editable)
-                    ) {
-                        if (performSetText(focused, text)) return RECEIVER_FILL_OK
+                    val isEditable = focused.isEditable
+                    val isBlank = focused.text.isNullOrBlank()
+                    val isDocField = isDocumentNumberFieldByLabel(focused, editable)
+                    Log.d(DIAG_TAG, "Fallback foco: editável=$isEditable vazio=$isBlank excluidoPorCampoDocumento=$isDocField")
+                    if (isEditable && !focused.isPassword && isBlank && !isDocField) {
+                        val ok = performSetText(focused, text)
+                        Log.d(DIAG_TAG, "ACTION_SET_TEXT (foco): $ok")
+                        if (ok) return RECEIVER_FILL_OK
                     }
                 } finally {
                     focused.recycle()
                 }
             }
 
-            return if (sawReceiverField) RECEIVER_FILL_ALREADY_FILLED
-            else RECEIVER_FILL_NOT_FOUND
+            val result = if (sawReceiverField) RECEIVER_FILL_ALREADY_FILLED else RECEIVER_FILL_NOT_FOUND
+            Log.d(DIAG_TAG, "Preenche nome: resultado final=$result")
+            return result
         } finally {
             root.recycle()
         }
@@ -473,6 +507,8 @@ class FloatingFillAccessibilityService : AccessibilityService() {
     companion object {
 
         private const val TAG = "OtimizaFlashAccessibility"
+
+        private const val DIAG_TAG = "OTIMIZA_NOME"
 
         private val TEL_MARK_REGEX = Regex("(?i)\\btel\\b")
 

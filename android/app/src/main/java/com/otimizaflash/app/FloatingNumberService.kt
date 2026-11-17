@@ -47,7 +47,6 @@ class FloatingNumberService : Service() {
     // 0 = próximo clique preenche o Número do Documento;
     // 1+ = próximo clique tenta preencher o Nome do recebedor.
     private var proofStep: Int = 0
-
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(
@@ -340,10 +339,14 @@ class FloatingNumberService : Service() {
             }
 
             else -> {
+                val nameStored = RecipientNameStore.get()
+                Log.d(DIAG_TAG, "Toque: nomeArmazenado=${nameStored != null} etapa=$proofStep")
+
                 if (FloatingFillAccessibilityService.isOnOrderScreen()) {
                     val name = FloatingFillAccessibilityService.findRecipientNameOnScreen()
 
                     if (name == null) {
+                        Log.d(DIAG_TAG, "Captura: nome não localizado na tela — limpando armazenamento")
                         RecipientNameStore.clear()
                         showTransientMessage("Nome do destinatário não encontrado.")
                         return
@@ -351,26 +354,30 @@ class FloatingNumberService : Service() {
 
                     RecipientNameStore.set(name)
                     proofStep = 0
+                    Log.d(DIAG_TAG, "Captura: nome armazenado (tamanho=${name.length}) — sequência reiniciada")
 
                     showTransientMessage("Nome capturado!")
                     return
                 }
 
                 if (FloatingFillAccessibilityService.isOnProofOfDeliveryScreen()) {
+                    Log.d(DIAG_TAG, "Prova de entrega reconhecida — etapa=$proofStep")
 
                     if (proofStep >= 1) {
                         val name = RecipientNameStore.get()
 
                         if (name != null) {
-                            when (
-                                FloatingFillAccessibilityService.fillReceiverNameOnScreen(name)
-                            ) {
+                            val result = FloatingFillAccessibilityService.fillReceiverNameOnScreen(name)
+                            Log.d(DIAG_TAG, "Preenchimento do nome: resultado=$result")
+                            when (result) {
                                 FloatingFillAccessibilityService.RECEIVER_FILL_OK,
                                 FloatingFillAccessibilityService.RECEIVER_FILL_ALREADY_FILLED -> {
                                     showCopiedFeedback()
                                     return
                                 }
                             }
+                        } else {
+                            Log.d(DIAG_TAG, "Etapa de nome sem nome armazenado — nada a fazer")
                         }
                         // Nome indisponível ou campo não localizado: cai no
                         // fluxo normal (foco/cópia) sem gerar novo número.
@@ -384,9 +391,13 @@ class FloatingNumberService : Service() {
                         FloatingFillAccessibilityService.fillFocusedInput(number)
                     ) {
                         proofStep = 1
+                        Log.d(DIAG_TAG, "1º clique: documento preenchido — etapa avançada para 1")
                         showCopiedFeedback()
                         return
                     }
+                    Log.d(DIAG_TAG, "1º clique: preenchimento do documento não confirmado — etapa mantida")
+                } else {
+                    Log.d(DIAG_TAG, "Prova de entrega NÃO reconhecida — fluxo normal")
                 }
 
                 val number = generateNumber()
@@ -846,6 +857,8 @@ class FloatingNumberService : Service() {
 
         private const val TAG =
             "Rota123FloatingNumber"
+
+        private const val DIAG_TAG = "OTIMIZA_NOME"
 
         private const val FEEDBACK_MS =
             700L
