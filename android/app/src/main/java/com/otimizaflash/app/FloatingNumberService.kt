@@ -332,12 +332,7 @@ class FloatingNumberService : Service() {
                     return
                 }
 
-                if (copyToClipboard(phone)) {
-                    showTransientMessage("Telefone copiado!")
-                    openWhatsAppChat(phone)
-                } else {
-                    showTransientMessage("Telefone não encontrado nesta tela.")
-                }
+                openWhatsAppChat(phone)
             }
 
             else -> {
@@ -695,8 +690,12 @@ class FloatingNumberService : Service() {
 
         val digits = phone.filter { it.isDigit() }
 
+        val message = "Olá, tudo bem? 😊 Sou entregador da Shopee e estou entrando em contato sobre sua entrega. 📦🤣"
+
+        val encodedMessage = android.net.Uri.encode(message)
+
         val uri = android.net.Uri.parse(
-            "https://api.whatsapp.com/send?phone=$digits"
+            "https://api.whatsapp.com/send?phone=$digits&text=$encodedMessage"
         )
 
         val intent = Intent(Intent.ACTION_VIEW).apply {
@@ -707,8 +706,8 @@ class FloatingNumberService : Service() {
         try {
             startActivity(intent)
         } catch (e: Exception) {
-            Log.e(TAG, "WhatsApp indisponível — número mantido na área de transferência", e)
-            showTransientMessage("Não foi possível abrir o WhatsApp. Telefone copiado!")
+            Log.e(TAG, "WhatsApp indisponível", e)
+            showTransientMessage("Não foi possível abrir o WhatsApp.")
         }
     }
 
