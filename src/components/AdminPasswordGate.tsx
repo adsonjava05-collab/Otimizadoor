@@ -6,7 +6,7 @@ interface AdminPasswordGateProps {
   onCancel: () => void;
 }
 
-const ADMIN_PASSWORD = '061026';
+const ADMIN_PASSWORD = '061012';
 
 export function AdminPasswordGate({ onSuccess, onCancel }: AdminPasswordGateProps) {
   const [password, setPassword] = useState('');

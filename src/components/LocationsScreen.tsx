@@ -7,10 +7,11 @@ export interface LocationInfo {
 }
 
 export const LOCATIONS: LocationInfo[] = [
-  { id: '1', name: 'Localização 1', address: 'Avenida Paulista, 1010' },
-  { id: '2', name: 'Localização 2', address: 'Rua Machado Nunes, 87' },
-  { id: '3', name: 'Localização 3', address: 'Rua Joaquim Meira de Siqueira, 260' },
-  { id: '4', name: 'Localização 4', address: 'Endereço a definir' },
+  { id: '1', name: 'Vila Guilherme', address: 'Coordenadas cadastradas' },
+  { id: '2', name: 'Lapa', address: 'Endereço a definir' },
+  { id: '3', name: 'Guarulhos', address: 'Endereço a definir' },
+  { id: '4', name: 'Mooca', address: 'Endereço a definir' },
+  { id: '5', name: 'Sacomã', address: 'Endereço a definir' },
 ];
 
 const NATIVE_AVAILABLE_IDS = new Set(['1']);

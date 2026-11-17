@@ -12,7 +12,7 @@ object MockLocations {
     private val LOCATIONS = listOf(
         MockLocation(
             id = "1",
-            name = "Localização 1",
+            name = "Vila Guilherme",
             latitude = -23.52012080,
             longitude = -46.60543151
         )
