@@ -637,34 +637,16 @@ class MainActivity : AppCompatActivity() {
 
     private fun isMockLocationAppSelected(): Boolean {
         return try {
-            val lm = getSystemService(LOCATION_SERVICE) as
-                android.location.LocationManager
+            val ops = getSystemService(APP_OPS_SERVICE) as
+                android.app.AppOpsManager
 
-            val provider = lm.getProvider(
-                android.location.LocationManager.GPS_PROVIDER
+            val mode = ops.checkOpNoThrow(
+                android.app.AppOpsManager.OPSTR_MOCK_LOCATION,
+                android.os.Process.myUid(),
+                packageName
             )
 
-            // On API 31+ we can check requiresNetwork etc., but the real test
-            // is whether addTestProvider succeeds. We do a lightweight check:
-            // the app must have the mock_location permission (dev options).
-            val tries = contentResolver
-            val _ = tries
-
-            // Best available check: try a no-op test provider cycle.
-            try {
-                lm.addTestProvider(
-                    "rota123_test_check",
-                    false, false, false, false,
-                    true, true, true,
-                    android.location.Criteria.POWER_LOW
-                )
-                lm.setTestProviderEnabled("rota123_test_check", true)
-                lm.setTestProviderEnabled("rota123_test_check", false)
-                lm.removeTestProvider("rota123_test_check")
-                true
-            } catch (e: SecurityException) {
-                false
-            }
+            mode == android.app.AppOpsManager.MODE_ALLOWED
         } catch (e: Exception) {
             Log.e(TAG, "Erro ao verificar mock app", e)
             false

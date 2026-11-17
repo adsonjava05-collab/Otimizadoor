@@ -94,13 +94,14 @@ class MockLocationService : Service() {
             lm.addTestProvider(
                 PROVIDER,
                 false,
-                false,
+                true,
                 false,
                 false,
                 true,
                 true,
                 true,
-                Criteria.POWER_LOW
+                Criteria.POWER_LOW,
+                Criteria.ACCURACY_FINE
             )
             lm.setTestProviderEnabled(PROVIDER, true)
 
@@ -204,7 +205,7 @@ class MockLocationService : Service() {
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_floating_copy)
             .setContentTitle("Localização simulada ativa")
-            .setContentText("$locationName (demonstração)")
+            .setContentText(locationName)
             .setOngoing(true)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .build()
