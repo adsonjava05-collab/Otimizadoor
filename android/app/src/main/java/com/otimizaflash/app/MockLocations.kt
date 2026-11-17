@@ -23,11 +23,11 @@ object MockLocations {
             longitude = -46.72421649
         ),
         MockLocation(
-            id = "3",
-            name = "Guarulhos",
-            latitude = -23.489307,
-            longitude = -46.540940
-        )
+    id = "3",
+    name = "Guarulhos",
+    latitude = -23.489981,
+    longitude = -46.539874
+)
     )
 
     fun findById(id: String): MockLocation? = LOCATIONS.find { it.id == id }
