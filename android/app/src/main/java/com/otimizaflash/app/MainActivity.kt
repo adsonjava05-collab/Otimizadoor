@@ -681,7 +681,8 @@ class MainActivity : AppCompatActivity() {
 
             "rota123.com.br",
             "www.rota123.com.br",
-            "otimizador-lc0t.bolt.host" -> true
+            "otimizador-lc0t.bolt.host",
+            "otimizaflash.vercel.app" -> true
 
             else -> false
         }
@@ -2206,7 +2207,7 @@ class MainActivity : AppCompatActivity() {
             ConcurrentHashMap<String, Uri>()
 
         private const val PWA_URL =
-            "https://otimizador-lc0t.bolt.host"
+            "https://otimizaflash.vercel.app"
 
         private const val SERVICE_STATE_DELAY_MS =
             150L
