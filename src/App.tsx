@@ -142,6 +142,7 @@ function App() {
   const [activeLocationId, setActiveLocationId] = useState<string | null>(() => isMockLocationSupported() ? getMockLocationActiveId() : null);
   const [mockLocationError, setMockLocationError] = useState<MockLocationError>('');
   const [showFlexTour, setShowFlexTour] = useState(false);
+  const [showHomeConfirm, setShowHomeConfirm] = useState(false);
   const [showFrotaTour, setShowFrotaTour] = useState(false);
   const [floatingNumberOn, setFloatingNumberOn] = useState(() => isFloatingNumberSupported() && getFloatingNumberActive());
   const [showFloatingTutorial, setShowFloatingTutorial] = useState(false);
@@ -395,8 +396,6 @@ function App() {
     };
   }, [handleAndroidBack]);
 
-  const [showHomeConfirm, setShowHomeConfirm] = useState(false);
-
   const handleGoHome = useCallback(() => {
     setShowPrepareRoute(false);
     setRows([]);
@@ -418,12 +417,12 @@ function App() {
   }, []);
 
   const handleHomeClick = useCallback(() => {
-    if (hasData) {
+    if (rows.length > 0) {
       setShowHomeConfirm(true);
     } else {
       handleGoHome();
     }
-  }, [hasData, handleGoHome]);
+  }, [rows, handleGoHome]);
 
   const handleResumeFromHistory = useCallback(
     (entry: HistoryEntry) => {
