@@ -549,6 +549,11 @@ class MainActivity : AppCompatActivity() {
         webView.post {
             deliverOverlayState()
         }
+
+        // Sincroniza o toggle quando o serviço é desativado pela lixeira.
+        FloatingNumberService.setOnStateChangeCallback {
+            webView.post { deliverOverlayState() }
+        }
     }
 
     override fun onResume() {

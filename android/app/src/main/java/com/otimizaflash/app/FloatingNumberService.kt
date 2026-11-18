@@ -85,6 +85,7 @@ class FloatingNumberService : Service() {
 
         isRunning = false
         setActiveInstance(null)
+        onStateChangeCallback?.invoke()
 
         super.onDestroy()
     }
@@ -804,12 +805,26 @@ class FloatingNumberService : Service() {
         }
     }
 
+    private var trashHighlighted = false
+
     private fun highlightTrashZoneIfNeeded(rawX: Float, rawY: Float) {
         val trash = trashView ?: return
-        if (isOverTrashZone(rawX, rawY)) {
-            trash.animate().scaleX(1.15f).scaleY(1.15f).setDuration(80).start()
-        } else {
-            trash.animate().scaleX(1f).scaleY(1f).setDuration(80).start()
+        val over = isOverTrashZone(rawX, rawY)
+
+        if (over && !trashHighlighted) {
+            trashHighlighted = true
+            (trash.background as? GradientDrawable)?.apply {
+                setColor(Color.parseColor("#DC2626"))
+                setStroke(dp(4), Color.parseColor("#FECACA"))
+            }
+            trash.animate().scaleX(1.2f).scaleY(1.2f).setDuration(100).start()
+        } else if (!over && trashHighlighted) {
+            trashHighlighted = false
+            (trash.background as? GradientDrawable)?.apply {
+                setColor(Color.parseColor("#991B1B"))
+                setStroke(dp(2), Color.parseColor("#FCA5A5"))
+            }
+            trash.animate().scaleX(1f).scaleY(1f).setDuration(100).start()
         }
     }
 
@@ -847,6 +862,7 @@ class FloatingNumberService : Service() {
         val trash = trashView ?: return
         trashView = null
         trashParams = null
+        trashHighlighted = false
         try {
             windowManager?.removeView(trash)
         } catch (e: Exception) {
@@ -1062,6 +1078,13 @@ class FloatingNumberService : Service() {
 
         internal fun setActiveInstance(service: FloatingNumberService?) {
             instance = service
+        }
+
+        @Volatile
+        private var onStateChangeCallback: (() -> Unit)? = null
+
+        fun setOnStateChangeCallback(callback: (() -> Unit)?) {
+            onStateChangeCallback = callback
         }
 
         fun generateNumberStatic(): String =
