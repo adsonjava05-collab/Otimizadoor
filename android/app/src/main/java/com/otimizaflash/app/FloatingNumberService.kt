@@ -241,6 +241,7 @@ class FloatingNumberService : Service() {
                         ) {
                             isDragging = true
                             handler.removeCallbacksAndMessages(null)
+                            if (menuMode) closeMenuMode()
                             showTrashZone()
                         }
 
@@ -509,9 +510,19 @@ class FloatingNumberService : Service() {
             WindowManager.LayoutParams.WRAP_CONTENT,
             windowType,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
+                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
+                WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH,
             PixelFormat.TRANSLUCENT
         )
+
+        menu.setOnTouchListener { _, event ->
+            if (event.actionMasked == MotionEvent.ACTION_OUTSIDE) {
+                closeMenuMode()
+                true
+            } else {
+                false
+            }
+        }
 
         val metrics = resources.displayMetrics
         val screenWidth = metrics.widthPixels
@@ -529,10 +540,11 @@ class FloatingNumberService : Service() {
 
         menuParams.gravity = Gravity.TOP or Gravity.START
 
-        if (button != null && button.width > 0) {
-            val btnX = (button.layoutParams as? WindowManager.LayoutParams)?.x ?: 0
-            val btnY = (button.layoutParams as? WindowManager.LayoutParams)?.y ?: 0
-            val btnSize = button.width
+        val btnParams = buttonParams
+        if (btnParams != null) {
+            val btnX = btnParams.x
+            val btnY = btnParams.y
+            val btnSize = btnParams.width.coerceAtLeast(dp(52))
 
             var menuX = btnX
             var menuY = btnY + btnSize + menuMargin
@@ -802,12 +814,33 @@ class FloatingNumberService : Service() {
     }
 
     private fun isOverTrashZone(rawX: Float, rawY: Float): Boolean {
-        val trash = trashView ?: return false
-        val trashRect = android.graphics.Rect()
-        trash.getGlobalVisibleRect(trashRect)
-        val padding = dp(16)
-        trashRect.inset(-padding, -padding)
-        return trashRect.contains(rawX.toInt(), rawY.toInt())
+        if (trashView == null) return false
+        val tp = trashParams ?: return false
+
+        val metrics = resources.displayMetrics
+        val screenWidth = metrics.widthPixels
+        val screenHeight = metrics.heightPixels
+        val trashSize = tp.width
+
+        val centerX: Int
+        val centerY: Int
+
+        if (tp.gravity and Gravity.HORIZONTAL_GRAVITY_MASK == Gravity.CENTER_HORIZONTAL) {
+            centerX = screenWidth / 2 + tp.x
+        } else {
+            centerX = trashSize / 2 + tp.x
+        }
+
+        if (tp.gravity and Gravity.VERTICAL_GRAVITY_MASK == Gravity.BOTTOM) {
+            centerY = screenHeight - tp.y - trashSize / 2
+        } else {
+            centerY = trashSize / 2 + tp.y
+        }
+
+        val tolerance = dp(48)
+        val dx = abs(rawX.toInt() - centerX)
+        val dy = abs(rawY.toInt() - centerY)
+        return dx <= trashSize / 2 + tolerance && dy <= trashSize / 2 + tolerance
     }
 
     private fun hideTrashZone() {
@@ -822,8 +855,16 @@ class FloatingNumberService : Service() {
     }
 
     private fun closeMenuModeSafely() {
-        menuView = null
         menuMode = false
+        val menu = menuView
+        menuView = null
+        if (menu != null) {
+            try {
+                windowManager?.removeView(menu)
+            } catch (e: Exception) {
+                Log.e(TAG, "Erro ao remover menu órfão", e)
+            }
+        }
     }
 
     // =========================================================
