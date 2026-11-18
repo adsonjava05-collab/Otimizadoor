@@ -47,7 +47,7 @@ export function HomeCards({ flowState, onOpenPrepareRoute, onOpenFrota }: HomeCa
             <Users className="h-6 w-6 text-slate-900" />
           </div>
         </div>
-        <h3 className="text-lg font-bold text-slate-900 dark:text-white">Otimizar Frota</h3>
+        <h3 className="text-lg font-bold text-slate-900 dark:text-white">Preparar Rota Frota</h3>
         <p className="mt-1 mb-5 text-sm leading-relaxed text-slate-500 dark:text-slate-400">
           Prepare sua frota para otimização.
         </p>

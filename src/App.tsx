@@ -9,6 +9,7 @@ import {
 import { assignSequences } from './services/sequencingService';
 import { getApkCircuitUrl } from './services/settingsService';
 import { GroupingConfirmModal } from './components/GroupingConfirmModal';
+import { ConfirmModal } from './components/ConfirmModal';
 import {
   createCheckState,
   checkSpxTn,
@@ -394,6 +395,8 @@ function App() {
     };
   }, [handleAndroidBack]);
 
+  const [showHomeConfirm, setShowHomeConfirm] = useState(false);
+
   const handleGoHome = useCallback(() => {
     setShowPrepareRoute(false);
     setRows([]);
@@ -408,7 +411,19 @@ function App() {
     setFirstScanTime(null);
     setMenuOpen(false);
     clearActiveSession();
+    clearFlowState();
+    clearStoredRoute();
+    setPreparedRoute(null);
+    setFlowState(getFlowState());
   }, []);
+
+  const handleHomeClick = useCallback(() => {
+    if (hasData) {
+      setShowHomeConfirm(true);
+    } else {
+      handleGoHome();
+    }
+  }, [hasData, handleGoHome]);
 
   const handleResumeFromHistory = useCallback(
     (entry: HistoryEntry) => {
@@ -879,7 +894,7 @@ function App() {
             <div className="flex items-center gap-2">
               {hasData && (
                 <button
-                  onClick={handleGoHome}
+                  onClick={handleHomeClick}
                   className="rounded-xl border border-slate-700 p-2.5 text-slate-200 transition-colors hover:border-brand-500 hover:text-brand-400"
                   title="Voltar para inicio"
                 >
@@ -1226,6 +1241,21 @@ function App() {
             setShowFrotaTour(false);
             try { await skipTutorialDb(installationId, 'frota'); } catch { /* ignore */ }
           }}
+        />
+      )}
+
+      {showHomeConfirm && (
+        <ConfirmModal
+          title="Voltar à tela inicial?"
+          message="Deseja voltar à tela inicial e reiniciar o processo de preparação da rota? Sua bipagem atual ficará salva e poderá ser retomada pelo Histórico."
+          confirmLabel="Sim, voltar"
+          cancelLabel="Não, continuar"
+          confirmVariant="primary"
+          onConfirm={() => {
+            setShowHomeConfirm(false);
+            handleGoHome();
+          }}
+          onCancel={() => setShowHomeConfirm(false)}
         />
       )}
 
