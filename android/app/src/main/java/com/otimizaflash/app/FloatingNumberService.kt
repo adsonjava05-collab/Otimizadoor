@@ -34,6 +34,10 @@ class FloatingNumberService : Service() {
     private var menuView: LinearLayout? = null
     private var windowManager: WindowManager? = null
 
+    private var trashView: View? = null
+    private var trashParams: WindowManager.LayoutParams? = null
+    private var buttonParams: WindowManager.LayoutParams? = null
+
     private val handler = Handler(Looper.getMainLooper())
 
     private var lastNumber: Int = -1
@@ -44,9 +48,6 @@ class FloatingNumberService : Service() {
 
     private var longPressFired: Boolean = false
 
-    // 0 = próximo clique preenche o Número do Documento;
-    // 1+ = próximo clique tenta preencher o Nome do recebedor.
-    private var proofStep: Int = 0
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(
@@ -59,6 +60,7 @@ class FloatingNumberService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+        setActiveInstance(this)
 
         try {
             showFloatingButton()
@@ -82,6 +84,7 @@ class FloatingNumberService : Service() {
         removeFloatingButton()
 
         isRunning = false
+        setActiveInstance(null)
 
         super.onDestroy()
     }
@@ -158,8 +161,9 @@ class FloatingNumberService : Service() {
 
         params.gravity = Gravity.TOP or Gravity.START
 
-        params.x = dp(48)
-        params.y = dp(240)
+        val metrics = resources.displayMetrics
+        params.x = max(0, metrics.widthPixels - sizePx - dp(20))
+        params.y = ((metrics.heightPixels - sizePx) * 0.28f).toInt()
 
         val touchSlop =
             ViewConfiguration.get(this).scaledTouchSlop
@@ -237,6 +241,7 @@ class FloatingNumberService : Service() {
                         ) {
                             isDragging = true
                             handler.removeCallbacksAndMessages(null)
+                            showTrashZone()
                         }
 
                         if (isDragging) {
@@ -253,6 +258,8 @@ class FloatingNumberService : Service() {
                                 newX,
                                 newY
                             )
+
+                            highlightTrashZoneIfNeeded(event.rawX, event.rawY)
                         }
 
                         true
@@ -262,7 +269,16 @@ class FloatingNumberService : Service() {
 
                         handler.removeCallbacksAndMessages(null)
 
-                        if (!isDragging && !longPressFired) {
+                        if (isDragging) {
+                            val droppedOnTrash = isOverTrashZone(event.rawX, event.rawY)
+                            hideTrashZone()
+
+                            if (droppedOnTrash) {
+                                Log.d(TAG, "Botão solto sobre a lixeira — desativando")
+                                stopSelf()
+                                return@setOnTouchListener true
+                            }
+                        } else if (!longPressFired) {
 
                             handleBubbleTap()
                         }
@@ -275,6 +291,10 @@ class FloatingNumberService : Service() {
                     MotionEvent.ACTION_CANCEL -> {
 
                         handler.removeCallbacksAndMessages(null)
+
+                        if (isDragging) {
+                            hideTrashZone()
+                        }
 
                         isDragging = false
                         longPressFired = false
@@ -296,6 +316,7 @@ class FloatingNumberService : Service() {
 
         floatingView = button
         buttonView = button
+        buttonParams = params
 
         // Primeiro uso: sem modo salvo, abre o menu de seleção.
         if (getSelectedMode().isEmpty()) {
@@ -340,30 +361,30 @@ class FloatingNumberService : Service() {
 
             else -> {
                 val nameStored = RecipientNameStore.get()
-                Log.d(DIAG_TAG, "Toque: nomeArmazenado=${nameStored != null} etapa=$proofStep")
+                Log.d(DIAG_TAG, "Toque: nomeArmazenado=${nameStored != null}")
 
                 if (FloatingFillAccessibilityService.isOnOrderScreen()) {
                     val name = FloatingFillAccessibilityService.findRecipientNameOnScreen()
 
                     if (name == null) {
-                        Log.d(DIAG_TAG, "Captura: nome não localizado na tela — limpando armazenamento")
-                        RecipientNameStore.clear()
+                        Log.d(DIAG_TAG, "Captura: nome não localizado na tela — mantendo nome anterior")
                         showTransientMessage("Nome do destinatário não encontrado.")
                         return
                     }
 
                     RecipientNameStore.set(name)
-                    proofStep = 0
-                    Log.d(DIAG_TAG, "Captura: nome armazenado (tamanho=${name.length}) — sequência reiniciada")
+                    Log.d(DIAG_TAG, "Captura: nome armazenado (tamanho=${name.length})")
 
-                    showTransientMessage("Nome capturado!")
+                    showTransientMessage("Nome capturado manualmente")
                     return
                 }
 
                 if (FloatingFillAccessibilityService.isOnProofOfDeliveryScreen()) {
-                    Log.d(DIAG_TAG, "Prova de entrega reconhecida — etapa=$proofStep")
+                    Log.d(DIAG_TAG, "Prova de entrega reconhecida — verificando estado dos campos")
 
-                    if (proofStep >= 1) {
+                    val docFilled = FloatingFillAccessibilityService.isDocumentNumberFilledOnScreen()
+
+                    if (docFilled) {
                         val name = RecipientNameStore.get()
 
                         if (name != null) {
@@ -377,10 +398,8 @@ class FloatingNumberService : Service() {
                                 }
                             }
                         } else {
-                            Log.d(DIAG_TAG, "Etapa de nome sem nome armazenado — nada a fazer")
+                            Log.d(DIAG_TAG, "Documento preenchido mas sem nome armazenado — nada a fazer")
                         }
-                        // Nome indisponível ou campo não localizado: cai no
-                        // fluxo normal (foco/cópia) sem gerar novo número.
                         return
                     }
 
@@ -390,12 +409,11 @@ class FloatingNumberService : Service() {
                         isAutoFillEnabled(this) &&
                         FloatingFillAccessibilityService.fillFocusedInput(number)
                     ) {
-                        proofStep = 1
-                        Log.d(DIAG_TAG, "1º clique: documento preenchido — etapa avançada para 1")
+                        Log.d(DIAG_TAG, "Documento preenchido manualmente")
                         showCopiedFeedback()
                         return
                     }
-                    Log.d(DIAG_TAG, "1º clique: preenchimento do documento não confirmado — etapa mantida")
+                    Log.d(DIAG_TAG, "Preenchimento do documento não confirmado")
                 } else {
                     Log.d(DIAG_TAG, "Prova de entrega NÃO reconhecida — fluxo normal")
                 }
@@ -438,7 +456,10 @@ class FloatingNumberService : Service() {
 
         val wm = windowManager ?: return
 
-        if (menuView != null) return
+        if (menuView != null) {
+            menuMode = true
+            return
+        }
 
         val menu = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -475,29 +496,59 @@ class FloatingNumberService : Service() {
             }
         )
 
-        val menuParams = WindowManager.LayoutParams(
-            WindowManager.LayoutParams.WRAP_CONTENT,
-            WindowManager.LayoutParams.WRAP_CONTENT,
+        val windowType =
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
             } else {
                 @Suppress("DEPRECATION")
                 WindowManager.LayoutParams.TYPE_PHONE
-            },
+            }
+
+        val menuParams = WindowManager.LayoutParams(
+            WindowManager.LayoutParams.WRAP_CONTENT,
+            WindowManager.LayoutParams.WRAP_CONTENT,
+            windowType,
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
                 WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
             PixelFormat.TRANSLUCENT
         )
 
+        val metrics = resources.displayMetrics
+        val screenWidth = metrics.widthPixels
+        val screenHeight = metrics.heightPixels
+
         val button = buttonView
+        val buttonSize = dp(52)
+        val menuMargin = dp(8)
 
-        if (button != null) {
-            val loc = IntArray(2)
-            button.getLocationOnScreen(loc)
+        // Mede o menu para posicionar com precisão.
+        val measureSpec = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+        menu.measure(measureSpec, measureSpec)
+        val menuW = menu.measuredWidth.coerceAtLeast(dp(140))
+        val menuH = menu.measuredHeight.coerceAtLeast(dp(96))
 
-            menuParams.gravity = Gravity.TOP or Gravity.START
-            menuParams.x = loc[0]
-            menuParams.y = loc[1] + button.height + dp(8)
+        menuParams.gravity = Gravity.TOP or Gravity.START
+
+        if (button != null && button.width > 0) {
+            val btnX = (button.layoutParams as? WindowManager.LayoutParams)?.x ?: 0
+            val btnY = (button.layoutParams as? WindowManager.LayoutParams)?.y ?: 0
+            val btnSize = button.width
+
+            var menuX = btnX
+            var menuY = btnY + btnSize + menuMargin
+
+            // Se o menu ultrapassar o rodapé, abre acima da bolha.
+            if (menuY + menuH > screenHeight - menuMargin) {
+                menuY = (btnY - menuH - menuMargin).coerceAtLeast(menuMargin)
+            }
+
+            // Se o menu ultrapassar a direita, alinha à direita da bolha.
+            if (menuX + menuW > screenWidth - menuMargin) {
+                menuX = (screenWidth - menuW - menuMargin).coerceAtLeast(menuMargin)
+            }
+
+            menuParams.x = menuX.coerceIn(menuMargin, screenWidth - menuW - menuMargin)
+            menuParams.y = menuY.coerceIn(menuMargin, screenHeight - menuH - menuMargin)
         } else {
             menuParams.gravity = Gravity.CENTER
         }
@@ -505,6 +556,7 @@ class FloatingNumberService : Service() {
         try {
             wm.addView(menu, menuParams)
             menuView = menu
+            menuMode = true
         } catch (e: Exception) {
             Log.e(TAG, "Erro ao abrir menu do botão flutuante", e)
             menuMode = false
@@ -583,15 +635,16 @@ class FloatingNumberService : Service() {
 
         menuMode = false
 
-        val menu = menuView ?: return
+        val menu = menuView
+        menuView = null
+
+        if (menu == null) return
 
         try {
             windowManager?.removeView(menu)
         } catch (e: Exception) {
             Log.e(TAG, "Erro ao fechar menu do botão flutuante", e)
         }
-
-        menuView = null
     }
 
     // =========================================================
@@ -659,6 +712,8 @@ class FloatingNumberService : Service() {
 
     private fun removeFloatingButton() {
 
+        hideTrashZone()
+
         val view = floatingView ?: return
 
         try {
@@ -678,7 +733,92 @@ class FloatingNumberService : Service() {
 
         floatingView = null
         buttonView = null
+        buttonParams = null
         windowManager = null
+    }
+
+    // =========================================================
+    // LIXEIRA (desativação por arraste)
+    // =========================================================
+
+    private fun showTrashZone() {
+        if (trashView != null) return
+        val wm = windowManager ?: return
+
+        val sizePx = dp(72)
+
+        val trash = ImageView(this).apply {
+            setImageResource(R.drawable.ic_floating_trash)
+            scaleType = ImageView.ScaleType.FIT_CENTER
+            setPadding(dp(18), dp(18), dp(18), dp(18))
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.OVAL
+                setColor(Color.parseColor("#991B1B"))
+                setStroke(dp(2), Color.parseColor("#FCA5A5"))
+            }
+            elevation = dp(8).toFloat()
+            alpha = 0f
+            animate().alpha(1f).setDuration(150).start()
+        }
+
+        val windowType =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+            } else {
+                @Suppress("DEPRECATION")
+                WindowManager.LayoutParams.TYPE_PHONE
+            }
+
+        val tp = WindowManager.LayoutParams(
+            sizePx,
+            sizePx,
+            windowType,
+            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE or
+                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
+            PixelFormat.TRANSLUCENT
+        )
+
+        tp.gravity = Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
+        tp.x = 0
+        tp.y = dp(24)
+
+        try {
+            wm.addView(trash, tp)
+            trashView = trash
+            trashParams = tp
+        } catch (e: Exception) {
+            Log.e(TAG, "Erro ao exibir lixeira", e)
+        }
+    }
+
+    private fun highlightTrashZoneIfNeeded(rawX: Float, rawY: Float) {
+        val trash = trashView ?: return
+        if (isOverTrashZone(rawX, rawY)) {
+            trash.animate().scaleX(1.15f).scaleY(1.15f).setDuration(80).start()
+        } else {
+            trash.animate().scaleX(1f).scaleY(1f).setDuration(80).start()
+        }
+    }
+
+    private fun isOverTrashZone(rawX: Float, rawY: Float): Boolean {
+        val trash = trashView ?: return false
+        val trashRect = android.graphics.Rect()
+        trash.getGlobalVisibleRect(trashRect)
+        val padding = dp(16)
+        trashRect.inset(-padding, -padding)
+        return trashRect.contains(rawX.toInt(), rawY.toInt())
+    }
+
+    private fun hideTrashZone() {
+        val trash = trashView ?: return
+        trashView = null
+        trashParams = null
+        try {
+            windowManager?.removeView(trash)
+        } catch (e: Exception) {
+            Log.e(TAG, "Erro ao remover lixeira", e)
+        }
     }
 
     private fun closeMenuModeSafely() {
@@ -875,6 +1015,19 @@ class FloatingNumberService : Service() {
         @Volatile
         var isRunning: Boolean = false
             private set
+
+        @Volatile
+        private var instance: FloatingNumberService? = null
+
+        internal fun setActiveInstance(service: FloatingNumberService?) {
+            instance = service
+        }
+
+        fun generateNumberStatic(): String =
+            instance?.generateNumber() ?: Random.nextInt(
+                100_000_000,
+                1_000_000_000
+            ).toString()
 
         fun isAutoFillEnabled(context: Context): Boolean {
             return context

@@ -3,9 +3,13 @@ package com.otimizaflash.app
 import android.accessibilityservice.AccessibilityService
 import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.os.SystemClock
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
+import android.widget.Toast
 import java.text.Normalizer
 import java.util.Locale
 import kotlin.math.abs
@@ -23,11 +27,163 @@ class FloatingFillAccessibilityService : AccessibilityService() {
     }
 
     override fun onDestroy() {
+        cancelAutoCaptureRetry()
+        cancelPodFillRetry()
         if (instance === this) instance = null
         super.onDestroy()
     }
 
-    override fun onAccessibilityEvent(event: AccessibilityEvent?) {}
+    private val serviceHandler = Handler(Looper.getMainLooper())
+
+    @Volatile
+    private var autoCapturedForCurrentOrder = false
+
+    private var autoCaptureAttempts = 0
+
+    private var autoCaptureRunnable: Runnable? = null
+
+    private var lastContentChangedCheck = 0L
+
+    @Volatile
+    private var autoFilledDocForCurrentPod = false
+
+    private var podFillAttempts = 0
+
+    private var podFillRunnable: Runnable? = null
+
+    override fun onAccessibilityEvent(event: AccessibilityEvent?) {
+        event ?: return
+        when (event.eventType) {
+            AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
+                if (isOrderScreen()) {
+                    if (!autoCapturedForCurrentOrder) {
+                        cancelAutoCaptureRetry()
+                        autoCaptureAttempts = 0
+                        tryAutoCapture()
+                    }
+                    resetPodAutoFill()
+                } else if (isProofOfDeliveryScreen()) {
+                    resetAutoCapture()
+                    if (!autoFilledDocForCurrentPod) {
+                        cancelPodFillRetry()
+                        podFillAttempts = 0
+                        tryAutoFillDocument()
+                    }
+                } else {
+                    resetAutoCapture()
+                    resetPodAutoFill()
+                }
+            }
+            AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED -> {
+                val now = SystemClock.uptimeMillis()
+                if (now - lastContentChangedCheck < CONTENT_CHANGED_THROTTLE_MS) return
+                lastContentChangedCheck = now
+                if (isOrderScreen()) {
+                    if (!autoCapturedForCurrentOrder) {
+                        cancelAutoCaptureRetry()
+                        autoCaptureAttempts = 0
+                        tryAutoCapture()
+                    }
+                } else if (isProofOfDeliveryScreen()) {
+                    if (!autoFilledDocForCurrentPod) {
+                        cancelPodFillRetry()
+                        podFillAttempts = 0
+                        tryAutoFillDocument()
+                    }
+                }
+            }
+        }
+    }
+
+    private fun cancelAutoCaptureRetry() {
+        autoCaptureRunnable?.let { serviceHandler.removeCallbacks(it) }
+        autoCaptureRunnable = null
+    }
+
+    private fun resetAutoCapture() {
+        cancelAutoCaptureRetry()
+        autoCapturedForCurrentOrder = false
+        autoCaptureAttempts = 0
+    }
+
+    private fun cancelPodFillRetry() {
+        podFillRunnable?.let { serviceHandler.removeCallbacks(it) }
+        podFillRunnable = null
+    }
+
+    private fun resetPodAutoFill() {
+        cancelPodFillRetry()
+        autoFilledDocForCurrentPod = false
+        podFillAttempts = 0
+    }
+
+    private fun tryAutoFillDocument() {
+        if (autoFilledDocForCurrentPod) return
+        if (!isProofOfDeliveryScreen()) return
+        if (!FloatingNumberService.isAutoFillEnabled(this)) {
+            autoFilledDocForCurrentPod = true
+            return
+        }
+
+        val filled = fillDocumentNumberIfEmpty()
+        if (filled) {
+            autoFilledDocForCurrentPod = true
+            podFillAttempts = 0
+            cancelPodFillRetry()
+            Log.d(DIAG_TAG, "POD auto-fill: documento preenchido automaticamente")
+            return
+        }
+
+        podFillAttempts++
+        if (podFillAttempts <= MAX_POD_FILL_ATTEMPTS) {
+            val r = Runnable { tryAutoFillDocument() }
+            podFillRunnable = r
+            serviceHandler.postDelayed(r, POD_FILL_RETRY_MS)
+            Log.d(
+                DIAG_TAG,
+                "POD auto-fill: campo não disponível, tentativa $podFillAttempts/$MAX_POD_FILL_ATTEMPTS"
+            )
+        } else {
+            podFillAttempts = 0
+            podFillRunnable = null
+            Log.d(DIAG_TAG, "POD auto-fill: máximo de tentativas atingido")
+        }
+    }
+
+    private fun tryAutoCapture() {
+        if (autoCapturedForCurrentOrder) return
+        if (!isOrderScreen()) return
+
+        val name = findRecipientName()
+        if (name != null) {
+            RecipientNameStore.set(name)
+            autoCapturedForCurrentOrder = true
+            autoCaptureAttempts = 0
+            cancelAutoCaptureRetry()
+            Toast.makeText(
+                this,
+                "Nome capturado automaticamente",
+                Toast.LENGTH_SHORT
+            ).show()
+            Log.d(DIAG_TAG, "Captura automática: nome armazenado (tamanho=${name.length})")
+            return
+        }
+
+        autoCaptureAttempts++
+        if (autoCaptureAttempts <= MAX_AUTO_CAPTURE_ATTEMPTS) {
+            val r = Runnable { tryAutoCapture() }
+            autoCaptureRunnable = r
+            serviceHandler.postDelayed(r, AUTO_CAPTURE_RETRY_MS)
+            Log.d(
+                DIAG_TAG,
+                "Captura automática: nome não disponível, tentativa $autoCaptureAttempts/$MAX_AUTO_CAPTURE_ATTEMPTS"
+            )
+        } else {
+            autoCaptureAttempts = 0
+            autoCaptureRunnable = null
+            Log.d(DIAG_TAG, "Captura automática: máximo de tentativas atingido")
+        }
+    }
 
     override fun onInterrupt() {}
 
@@ -466,6 +622,86 @@ class FloatingFillAccessibilityService : AccessibilityService() {
     }
 
     /**
+     * Localiza o campo "Número do Documento" na tela Prova de entrega.
+     * Reutiliza a mesma lógica de identificação usada pelo preenchimento
+     * manual (placeholder/hint + rótulo). Retorna o nó ou null.
+     */
+    private fun findDocumentNumberField(): AccessibilityNodeInfo? {
+        val root = rootInActiveWindow ?: return null
+        try {
+            val editable = mutableListOf<AccessibilityNodeInfo>()
+            collectEditableNodes(root, editable)
+
+            val placeholderMatch = editable.firstOrNull { matchesPlaceholder(it) }
+            if (placeholderMatch != null && labelConfirmsDocumentNumber(placeholderMatch, editable)) {
+                return placeholderMatch
+            }
+
+            val labelCandidates = editable.filter { isDocumentNumberFieldByLabel(it, editable) }
+            if (labelCandidates.size == 1) {
+                return labelCandidates.first()
+            }
+
+            return null
+        } finally {
+            root.recycle()
+        }
+    }
+
+    /**
+     * Preenche o campo "Número do Documento" na tela Prova de entrega
+     * apenas se estiver vazio (placeholder não conta como conteúdo).
+     * Nunca sobrescreve um valor existente. Retorna true se o preenchimento
+     * foi realizado com sucesso.
+     */
+    private fun fillDocumentNumberIfEmpty(): Boolean {
+        val root = rootInActiveWindow ?: return false
+        try {
+            val editable = mutableListOf<AccessibilityNodeInfo>()
+            collectEditableNodes(root, editable)
+
+            val docField = editable.firstOrNull { matchesPlaceholder(it) &&
+                labelConfirmsDocumentNumber(it, editable) }
+                ?: editable.firstOrNull { isDocumentNumberFieldByLabel(it, editable) }
+                ?: return false
+
+            if (fieldRealText(docField) != null) {
+                Log.d(DIAG_TAG, "POD auto-fill: documento já preenchido — não sobrescreve")
+                autoFilledDocForCurrentPod = true
+                return true
+            }
+
+            val number = FloatingNumberService.generateNumberStatic()
+            val ok = performSetText(docField, number)
+            Log.d(DIAG_TAG, "POD auto-fill: ACTION_SET_TEXT documento=$ok número=$number")
+            return ok
+        } finally {
+            root.recycle()
+        }
+    }
+
+    /**
+     * Verifica se o campo "Número do Documento" na tela Prova de entrega
+     * está preenchido com um valor real (não placeholder).
+     */
+    private fun isDocumentNumberFilled(): Boolean {
+        val root = rootInActiveWindow ?: return false
+        try {
+            val editable = mutableListOf<AccessibilityNodeInfo>()
+            collectEditableNodes(root, editable)
+
+            val docField = editable.firstOrNull { matchesPlaceholder(it) &&
+                labelConfirmsDocumentNumber(it, editable) }
+                ?: editable.firstOrNull { isDocumentNumberFieldByLabel(it, editable) }
+                ?: return false
+
+            return fieldRealText(docField) != null
+        } finally {
+            root.recycle()
+        }
+    }
+
+    /**
      * Preenche o campo "Nome do recebedor" na tela Prova de entrega.
      * Só escreve quando o campo está realmente vazio (placeholder não conta
      * como conteúdo) — nunca sobrescreve nome digitado manualmente.
@@ -545,6 +781,16 @@ class FloatingFillAccessibilityService : AccessibilityService() {
 
         private const val DIAG_TAG = "OTIMIZA_NOME"
 
+        private const val AUTO_CAPTURE_RETRY_MS = 500L
+
+        private const val MAX_AUTO_CAPTURE_ATTEMPTS = 6
+
+        private const val CONTENT_CHANGED_THROTTLE_MS = 800L
+
+        private const val POD_FILL_RETRY_MS = 500L
+
+        private const val MAX_POD_FILL_ATTEMPTS = 6
+
         private val TEL_MARK_REGEX = Regex("(?i)\\btel\\b")
 
         private val PHONE_REGEX = Regex("\\+?[\\d][\\d\\s()\\-.]{6,}")
@@ -568,6 +814,9 @@ class FloatingFillAccessibilityService : AccessibilityService() {
 
         fun isOnProofOfDeliveryScreen(): Boolean =
             instance?.isProofOfDeliveryScreen() ?: false
+
+        fun isDocumentNumberFilledOnScreen(): Boolean =
+            instance?.isDocumentNumberFilled() ?: false
 
         const val RECEIVER_FILL_OK = 1
         const val RECEIVER_FILL_ALREADY_FILLED = 0
